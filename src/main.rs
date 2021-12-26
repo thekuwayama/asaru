@@ -5,6 +5,7 @@ use anyhow::Result;
 use clap::{App, Arg};
 
 mod asana;
+mod controller;
 mod terminal;
 
 fn main() -> Result<()> {
@@ -17,11 +18,6 @@ fn main() -> Result<()> {
                 .required(true),
         )
         .arg(
-            Arg::with_name("text")
-                .help("Performs full-text search on both task name and description")
-                .required(true),
-        )
-        .arg(
             Arg::with_name("pats")
                 .help("Personal Access Tokens (PATs)")
                 .required(true),
@@ -30,16 +26,9 @@ fn main() -> Result<()> {
     let workspace_gid = matches
         .value_of("workspace_gid")
         .expect("Failed to specify workspace_gid");
-    let text = matches.value_of("text").expect("Failed to specify text");
     let pats = matches.value_of("pats").expect("Failed to specify pats");
-    asana::search_tasks(workspace_gid, text, pats)?
-        .data
-        .iter()
-        .map(|t| t.get_permalink_url(pats))
-        .flat_map(|r| r.ok())
-        .for_each(|s| println!("{}", s));
 
-    terminal::run();
+    let _ = terminal::run(workspace_gid, pats); // TODO
 
     Ok(())
 }

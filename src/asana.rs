@@ -7,7 +7,7 @@ use serde_json::Value;
 #[derive(Deserialize, Debug)]
 pub struct SearchTasksData {
     gid: String,
-    name: String,
+    pub name: String,
     resource_type: String,
     #[serde(skip)]
     workspace_gid: String,
