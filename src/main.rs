@@ -5,6 +5,8 @@ use anyhow::Result;
 use clap::{App, Arg};
 
 mod asana;
+mod terminal;
+
 fn main() -> Result<()> {
     let cli = App::new(crate_name!())
         .version(crate_version!())
@@ -36,6 +38,8 @@ fn main() -> Result<()> {
         .map(|t| t.get_permalink_url(pats))
         .flat_map(|r| r.ok())
         .for_each(|s| println!("{}", s));
+
+    terminal::run();
 
     Ok(())
 }
