@@ -1,50 +1,109 @@
 use std::io::{stdin, stdout, Write};
 
 use anyhow::Result;
+use termion::cursor::{self, DetectCursorPos};
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
-use termion::{clear, cursor, screen};
+use termion::{clear, screen};
 
 use crate::controller;
 
-pub fn run(workspace_gid: &str, pats: &str) -> Result<()> {
+const PROMPT_LINE: u16 = 1;
+const CRLF: &str = "\r\n";
+
+enum Mode {
+    Prompt,
+    Results,
+}
+
+pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     let mut stdin = stdin().keys();
     let mut screen = screen::AlternateScreen::from(stdout().into_raw_mode()?);
     write!(screen, "{}", clear::All)?;
-    screen.flush()?;
 
     let mut state = controller::State::new(workspace_gid, pats);
+    show(&mut screen, &state, None)?;
+
+    write!(screen, "{}{}", cursor::Goto(1, PROMPT_LINE), cursor::Show)?;
+    screen.flush()?;
+    let mut mode = Mode::Prompt;
+    let mut result = Ok(Vec::new());
     'root: loop {
-        show(&mut screen, &state)?;
         let input = stdin.next();
 
         for c in input {
-            match c? {
-                Key::Ctrl('c') => break 'root,
-                Key::Char('\n') => {
-                    state.search()?;
-                    show(&mut screen, &state)?;
-                }
-                Key::Char(c) => {
-                    state.text.push(c);
-                    show(&mut screen, &state)?;
-                    screen.flush()?;
-                }
-                _ => continue,
+            match mode {
+                Mode::Prompt => match c? {
+                    Key::Ctrl('c') => break 'root,
+                    Key::Char('\n') => {
+                        state.search()?;
+                        state.index = 0;
+                        show(&mut screen, &state, Some(state.index))?;
+
+                        write!(screen, "{}", cursor::Hide)?;
+                        screen.flush()?;
+                        mode = Mode::Results;
+                    }
+                    Key::Char(c) => {
+                        state.text.push(c);
+                        show(&mut screen, &state, None)?;
+
+                        write!(
+                            screen,
+                            "{}",
+                            cursor::Goto(state.text.len() as u16 + 1, PROMPT_LINE),
+                        )?;
+                        screen.flush()?;
+                    }
+                    _ => continue,
+                },
+                Mode::Results => match c? {
+                    Key::Ctrl('c') => break 'root,
+                    Key::Ctrl('s') => {
+                        state.text.clear();
+                        show(&mut screen, &state, None)?;
+
+                        write!(screen, "{}{}", cursor::Goto(1, PROMPT_LINE), cursor::Show)?;
+                        screen.flush()?;
+                        mode = Mode::Prompt;
+                    }
+                    Key::Down => {
+                        if state.index + 1 < state.tasks.len() {
+                            state.index += 1;
+                        }
+                        show(&mut screen, &state, Some(state.index))?;
+                    }
+                    Key::Up => {
+                        if state.index > 0 {
+                            state.index -= 1;
+                        }
+                        show(&mut screen, &state, Some(state.index))?;
+                    }
+                    Key::Char('\n') => {
+                        result = Ok(state.get_permalink_urls(&[state.index]));
+                        break 'root;
+                    }
+                    _ => continue,
+                },
             }
         }
     }
+    write!(screen, "{}", cursor::Show)?;
+    screen.flush()?;
 
-    Ok(())
+    result
 }
 
-fn show<W: Write>(screen: &mut W, state: &controller::State) -> Result<()> {
-    write!(screen, "{}{}", clear::All, cursor::Goto(1, 1))?;
+fn show<W: Write>(screen: &mut W, state: &controller::State, opt: Option<usize>) -> Result<()> {
+    write!(screen, "{}{}", clear::All, cursor::Goto(1, PROMPT_LINE))?;
 
-    write!(screen, "{}", state.text)?;
+    write!(screen, "{}{}{}", state.text, CRLF, CRLF)?;
     state.get_titles().iter().enumerate().for_each(|(i, s)| {
-        write!(screen, "{}{}", cursor::Goto(1, (i + 2) as u16), s); // FIXME
+        match opt {
+            Some(index) if i == index => write!(screen, "> {}{}", s, CRLF), // FIXME
+            _ => write!(screen, "  {}{}", s, CRLF),                         // FIXME
+        };
     });
     screen.flush()?;
 

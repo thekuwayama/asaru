@@ -28,7 +28,9 @@ fn main() -> Result<()> {
         .expect("Failed to specify workspace_gid");
     let pats = matches.value_of("pats").expect("Failed to specify pats");
 
-    let _ = terminal::run(workspace_gid, pats); // TODO: println! strings
+    if let Ok(res) = terminal::run(workspace_gid, pats) {
+        res.iter().for_each(|url| println!("{}", url));
+    } // FIXME: error
 
     Ok(())
 }

@@ -7,6 +7,7 @@ pub struct State {
     pub tasks: Vec<asana::SearchTasksData>,
     workspace_gid: String,
     pub pats: String,
+    pub index: usize,
 }
 
 impl State {
@@ -16,6 +17,7 @@ impl State {
             tasks: Vec::new(),
             workspace_gid: workspace_gid.to_string(),
             pats: pats.to_string(),
+            index: 0,
         }
     }
 
