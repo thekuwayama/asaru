@@ -30,8 +30,10 @@ impl SearchTasksData {
     }
 
     fn do_get_permalink_url(&self, pats: &str) -> Result<String> {
+        // NOTE: https://developers.asana.com/docs/get-a-task
         let url = format!("https://app.asana.com/api/1.0/tasks/{}", self.gid);
         let cli = Client::new();
+        // NOTE: https://developers.asana.com/docs/personal-access-token
         let res = cli.get(url).bearer_auth(pats).send()?;
         if res.status() != StatusCode::OK {
             return Err(anyhow!("Failed to get task in a workspace app.asana.com"));
@@ -49,11 +51,13 @@ pub fn search_tasks(workspace_gid: &str, text: &str, pats: &str) -> Result<Searc
 }
 
 fn do_search_tasks(workspace_gid: &str, text: &str, pats: &str) -> Result<String> {
+    // NOTE: https://developers.asana.com/docs/search-tasks-in-a-workspace
     let url = format!(
         "https://app.asana.com/api/1.0/workspaces/{}/tasks/search?text={}",
         workspace_gid, text
     );
     let cli = Client::new();
+    // NOTE: https://developers.asana.com/docs/personal-access-token
     let res = cli.get(url).bearer_auth(pats).send()?;
     if res.status() != StatusCode::OK {
         return Err(anyhow!(

@@ -10,27 +10,26 @@ use crate::controller;
 
 pub fn run(workspace_gid: &str, pats: &str) -> Result<()> {
     let mut stdin = stdin().keys();
-    let mut screen = screen::AlternateScreen::from(stdout().into_raw_mode().unwrap());
-    write!(screen, "{}", clear::All).unwrap();
-    screen.flush().unwrap();
+    let mut screen = screen::AlternateScreen::from(stdout().into_raw_mode()?);
+    write!(screen, "{}", clear::All)?;
+    screen.flush()?;
 
     let mut state = controller::State::new(workspace_gid, pats);
     'root: loop {
-        show(&state);
+        show(&mut screen, &state)?;
         let input = stdin.next();
 
         for c in input {
-            match c.unwrap() {
+            match c? {
                 Key::Ctrl('c') => break 'root,
                 Key::Char('\n') => {
                     state.search()?;
-                    show(&state);
-                    screen.flush().unwrap();
+                    show(&mut screen, &state)?;
                 }
                 Key::Char(c) => {
                     state.text.push(c);
-                    show(&state);
-                    screen.flush().unwrap();
+                    show(&mut screen, &state)?;
+                    screen.flush()?;
                 }
                 _ => continue,
             }
@@ -40,9 +39,14 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<()> {
     Ok(())
 }
 
-fn show(state: &controller::State) {
-    print!("{}{}", clear::All, cursor::Goto(1, 1));
+fn show<W: Write>(screen: &mut W, state: &controller::State) -> Result<()> {
+    write!(screen, "{}{}", clear::All, cursor::Goto(1, 1))?;
 
-    println!("{}", state.text);
-    state.get_titles().iter().for_each(|s| println!("{}", s));
+    write!(screen, "{}", state.text)?;
+    state.get_titles().iter().enumerate().for_each(|(i, s)| {
+        write!(screen, "{}{}", cursor::Goto(1, (i + 2) as u16), s); // FIXME
+    });
+    screen.flush()?;
+
+    Ok(())
 }
