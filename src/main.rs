@@ -30,7 +30,12 @@ fn main() -> Result<()> {
         .expect("Failed to specify workspace_gid");
     let text = matches.value_of("text").expect("Failed to specify text");
     let pats = matches.value_of("pats").expect("Failed to specify pats");
-    dbg!(asana::search_tasks(workspace_gid, text, pats)?);
+    asana::search_tasks(workspace_gid, text, pats)?
+        .data
+        .iter()
+        .map(|t| t.get_permalink_url(pats))
+        .flat_map(|r| r.ok())
+        .for_each(|s| println!("{}", s));
 
     Ok(())
 }

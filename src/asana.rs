@@ -5,7 +5,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 #[derive(Deserialize, Debug)]
-struct SearchTasksData {
+pub struct SearchTasksData {
     gid: String,
     name: String,
     resource_type: String,
@@ -15,11 +15,11 @@ struct SearchTasksData {
 
 #[derive(Deserialize, Debug)]
 pub struct SearchTasks {
-    data: Vec<SearchTasksData>,
+    pub data: Vec<SearchTasksData>,
 }
 
 impl SearchTasksData {
-    fn get_permalink_url(self, pats: &str) -> Result<String> {
+    pub fn get_permalink_url(&self, pats: &str) -> Result<String> {
         let json = self.do_get_permalink_url(pats)?;
         let root: Value = serde_json::from_str(&json)?;
         root.get("data")
@@ -29,8 +29,8 @@ impl SearchTasksData {
             .ok_or(anyhow!("Failed to extract permalink_url"))
     }
 
-    fn do_get_permalink_url(self, pats: &str) -> Result<String> {
-        let url = format!("https://app.asana.com/api/1.0/tasks/{}", self.workspace_gid);
+    fn do_get_permalink_url(&self, pats: &str) -> Result<String> {
+        let url = format!("https://app.asana.com/api/1.0/tasks/{}", self.gid);
         let cli = Client::new();
         let res = cli.get(url).bearer_auth(pats).send()?;
         if res.status() != StatusCode::OK {
