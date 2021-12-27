@@ -9,6 +9,7 @@ use termion::{clear, color, screen};
 
 use crate::controller;
 
+const BOL: u16 = 1;
 const PROMPT_LINE: u16 = 1;
 const CRLF: &str = "\r\n";
 
@@ -25,7 +26,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     let mut state = controller::State::new(workspace_gid, pats);
     show(&mut screen, &state, None)?;
 
-    write!(screen, "{}{}", cursor::Goto(1, PROMPT_LINE), cursor::Show)?;
+    write!(screen, "{}{}", cursor::Goto(BOL, PROMPT_LINE), cursor::Show)?;
     screen.flush()?;
     let mut mode = Mode::Prompt;
     let mut result = Ok(Vec::new());
@@ -80,7 +81,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         }
                     }
                     Key::Ctrl('a') => {
-                        write!(screen, "{}", cursor::Goto(1, PROMPT_LINE))?;
+                        write!(screen, "{}", cursor::Goto(BOL, PROMPT_LINE))?;
                         screen.flush()?;
                     }
                     Key::Ctrl('e') => {
@@ -175,7 +176,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
 }
 
 fn show<W: Write>(screen: &mut W, state: &controller::State, opt: Option<usize>) -> Result<()> {
-    write!(screen, "{}{}", clear::All, cursor::Goto(1, PROMPT_LINE))?;
+    write!(screen, "{}{}", clear::All, cursor::Goto(BOL, PROMPT_LINE))?;
 
     write!(screen, "{}{}{}", state.text, CRLF, CRLF)?;
     state
