@@ -48,6 +48,10 @@ impl State {
             .collect::<Vec<_>>()
     }
 
+    pub fn is_checked(&self, index: &usize) -> bool {
+        self.checked.contains(index)
+    }
+
     pub fn check(&mut self) -> Option<usize> {
         if self.tasks.is_empty() {
             return None;

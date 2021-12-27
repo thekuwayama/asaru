@@ -5,7 +5,7 @@ use termion::cursor::{self, DetectCursorPos};
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
-use termion::{clear, screen};
+use termion::{clear, color, screen};
 
 use crate::controller;
 
@@ -161,6 +161,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     }
                     Key::Char('\t') => {
                         state.check();
+                        show(&mut screen, &state, Some(state.index))?;
                     }
                     _ => continue,
                 },
@@ -182,7 +183,37 @@ fn show<W: Write>(screen: &mut W, state: &controller::State, opt: Option<usize>)
         .iter()
         .enumerate()
         .try_for_each(|(i, s)| match opt {
+            Some(index) if i == index && state.is_checked(&i) => {
+                write!(
+                    screen,
+                    "> {}{}{}{}",
+                    color::Bg(color::LightMagenta),
+                    s,
+                    CRLF,
+                    color::Bg(color::Reset),
+                )
+            }
             Some(index) if i == index => write!(screen, "> {}{}", s, CRLF),
+            Some(_) if state.is_checked(&i) => {
+                write!(
+                    screen,
+                    "  {}{}{}{}",
+                    color::Bg(color::LightMagenta),
+                    s,
+                    CRLF,
+                    color::Bg(color::Reset),
+                )
+            }
+            None if state.is_checked(&i) => {
+                write!(
+                    screen,
+                    "  {}{}{}{}",
+                    color::Bg(color::LightMagenta),
+                    s,
+                    CRLF,
+                    color::Bg(color::Reset),
+                )
+            }
             _ => write!(screen, "  {}{}", s, CRLF),
         })?;
     screen.flush()?;
