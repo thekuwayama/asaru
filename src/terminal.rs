@@ -45,14 +45,14 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         screen.flush()?;
                         mode = Mode::Results;
                     }
-                    Key::Left => {
+                    Key::Left | Key::Ctrl('b') => {
                         let (x, _) = screen.cursor_pos()?;
                         if x > 1 {
                             write!(screen, "{}", cursor::Goto(x - 1, PROMPT_LINE))?;
                             screen.flush()?;
                         }
                     }
-                    Key::Right => {
+                    Key::Right | Key::Ctrl('f') => {
                         let (x, _) = screen.cursor_pos()?;
                         if x < state.text.len() as u16 + 1 {
                             write!(screen, "{}", cursor::Goto(x + 1, PROMPT_LINE))?;
@@ -67,7 +67,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         write!(screen, "{}", cursor::Goto(x + 1, PROMPT_LINE))?;
                         screen.flush()?;
                     }
-                    Key::Backspace => {
+                    Key::Backspace | Key::Ctrl('h') => {
                         let (x, _) = screen.cursor_pos()?;
                         if x > 1 && !state.text.is_empty() {
                             state.text.remove((x - 2) as usize);
@@ -76,6 +76,30 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             write!(screen, "{}", cursor::Goto(x - 1, PROMPT_LINE))?;
                             screen.flush()?;
                         }
+                    }
+                    Key::Ctrl('a') => {
+                        write!(screen, "{}", cursor::Goto(1, PROMPT_LINE))?;
+                        screen.flush()?;
+                    }
+                    Key::Ctrl('e') => {
+                        write!(
+                            screen,
+                            "{}",
+                            cursor::Goto(state.text.len() as u16 + 1, PROMPT_LINE)
+                        )?;
+                        screen.flush()?;
+                    }
+                    Key::Ctrl('k') => {
+                        let (x, _) = screen.cursor_pos()?;
+                        state.text.truncate((x - 1) as usize);
+                        show(&mut screen, &state, None)?;
+
+                        write!(
+                            screen,
+                            "{}",
+                            cursor::Goto(state.text.len() as u16 + 1, PROMPT_LINE)
+                        )?;
+                        screen.flush()?;
                     }
                     _ => continue,
                 },
@@ -89,13 +113,13 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         screen.flush()?;
                         mode = Mode::Prompt;
                     }
-                    Key::Down => {
+                    Key::Down | Key::Ctrl('n') => {
                         if state.index + 1 < state.tasks.len() {
                             state.index += 1;
                         }
                         show(&mut screen, &state, Some(state.index))?;
                     }
-                    Key::Up => {
+                    Key::Up | Key::Ctrl('p') => {
                         if state.index > 0 {
                             state.index -= 1;
                         }
