@@ -1,14 +1,15 @@
 #[macro_use]
 extern crate clap;
 
-use anyhow::Result;
+use std::process;
+
 use clap::{App, Arg};
 
 mod asana;
 mod controller;
 mod terminal;
 
-fn main() -> Result<()> {
+fn main() {
     let cli = App::new(crate_name!())
         .version(crate_version!())
         .about(crate_description!())
@@ -28,9 +29,11 @@ fn main() -> Result<()> {
         .expect("Failed to specify workspace_gid");
     let pats = matches.value_of("pats").expect("Failed to specify pats");
 
-    if let Ok(res) = terminal::run(workspace_gid, pats) {
-        res.iter().for_each(|url| println!("{}", url));
-    } // FIXME: error
-
-    Ok(())
+    match terminal::run(workspace_gid, pats) {
+        Ok(res) => res.iter().for_each(|url| println!("{}", url)),
+        Err(err) => {
+            eprintln!("{}", err);
+            process::exit(1);
+        }
+    }
 }
