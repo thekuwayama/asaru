@@ -41,6 +41,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         state.search()?;
                         if !state.tasks.is_empty() {
                             state.index = 0;
+                            state.checked.clear();
                             show(&mut screen, &state, Some(state.index))?;
 
                             write!(screen, "{}", cursor::Hide)?;
