@@ -129,7 +129,12 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                                 .map(|s| vec![s])
                                 .ok_or(anyhow!("Failed to extract permalink_url"));
                         } else {
-                            result = Ok(state.get_checked_permalink_urls());
+                            let urls = state.get_checked_permalink_urls();
+                            if state.checked.len() != urls.len() {
+                                result = Ok(urls);
+                            } else {
+                                result = Err(anyhow!("Failed to extract permalink_url"));
+                            }
                         }
                         break 'root;
                     }
