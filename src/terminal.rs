@@ -45,16 +45,37 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         screen.flush()?;
                         mode = Mode::Results;
                     }
+                    Key::Left => {
+                        let (x, _) = screen.cursor_pos()?;
+                        if x > 1 {
+                            write!(screen, "{}", cursor::Goto(x - 1, PROMPT_LINE))?;
+                            screen.flush()?;
+                        }
+                    }
+                    Key::Right => {
+                        let (x, _) = screen.cursor_pos()?;
+                        if x < state.text.len() as u16 + 1 {
+                            write!(screen, "{}", cursor::Goto(x + 1, PROMPT_LINE))?;
+                            screen.flush()?;
+                        }
+                    }
                     Key::Char(c) => {
-                        state.text.push(c);
+                        let (x, _) = screen.cursor_pos()?;
+                        state.text.insert((x - 1) as usize, c);
                         show(&mut screen, &state, None)?;
 
-                        write!(
-                            screen,
-                            "{}",
-                            cursor::Goto(state.text.len() as u16 + 1, PROMPT_LINE),
-                        )?;
+                        write!(screen, "{}", cursor::Goto(x + 1, PROMPT_LINE))?;
                         screen.flush()?;
+                    }
+                    Key::Backspace => {
+                        let (x, _) = screen.cursor_pos()?;
+                        if x > 1 && !state.text.is_empty() {
+                            state.text.remove((x - 2) as usize);
+                            show(&mut screen, &state, None)?;
+
+                            write!(screen, "{}", cursor::Goto(x - 1, PROMPT_LINE))?;
+                            screen.flush()?;
+                        }
                     }
                     _ => continue,
                 },
