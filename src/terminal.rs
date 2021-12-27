@@ -168,12 +168,14 @@ fn show<W: Write>(screen: &mut W, state: &controller::State, opt: Option<usize>)
     write!(screen, "{}{}", clear::All, cursor::Goto(1, PROMPT_LINE))?;
 
     write!(screen, "{}{}{}", state.text, CRLF, CRLF)?;
-    state.get_titles().iter().enumerate().for_each(|(i, s)| {
-        match opt {
-            Some(index) if i == index => write!(screen, "> {}{}", s, CRLF), // FIXME
-            _ => write!(screen, "  {}{}", s, CRLF),                         // FIXME
-        };
-    });
+    state
+        .get_titles()
+        .iter()
+        .enumerate()
+        .try_for_each(|(i, s)| match opt {
+            Some(index) if i == index => write!(screen, "> {}{}", s, CRLF),
+            _ => write!(screen, "  {}{}", s, CRLF),
+        })?;
     screen.flush()?;
 
     Ok(())

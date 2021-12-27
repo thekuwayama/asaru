@@ -21,12 +21,6 @@ impl State {
         }
     }
 
-    pub fn input(&mut self, text: &str) -> &mut Self {
-        self.text = text.to_string();
-
-        self
-    }
-
     pub fn search(&mut self) -> Result<&mut Self> {
         self.tasks = asana::search_tasks(&self.workspace_gid, &self.text, &self.pats)?.data;
 
