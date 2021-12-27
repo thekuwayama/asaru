@@ -125,12 +125,6 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         screen.flush()?;
                         mode = Mode::Prompt;
                     }
-                    Key::Down | Key::Ctrl('n') => {
-                        if state.index + 1 < state.tasks.len() {
-                            state.index += 1;
-                        }
-                        show(&mut screen, &state, Some(state.index))?;
-                    }
                     Key::Up | Key::Ctrl('p') if state.index <= 0 => {
                         show(&mut screen, &state, None)?;
 
@@ -146,6 +140,12 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     Key::Up | Key::Ctrl('p') => {
                         if state.index > 0 {
                             state.index -= 1;
+                        }
+                        show(&mut screen, &state, Some(state.index))?;
+                    }
+                    Key::Down | Key::Ctrl('n') => {
+                        if state.index + 1 < state.tasks.len() {
+                            state.index += 1;
                         }
                         show(&mut screen, &state, Some(state.index))?;
                     }
