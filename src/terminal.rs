@@ -1,6 +1,6 @@
 use std::io::{stdin, stdout, Write};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use termion::cursor::{self, DetectCursorPos};
 use termion::event::Key;
 use termion::input::TermRead;
@@ -154,7 +154,10 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         show(&mut screen, &state, Some(state.index))?;
                     }
                     Key::Char('\n') if state.checked.is_empty() => {
-                        result = Ok(state.get_permalink_urls(&[state.index]));
+                        result = state
+                            .get_permalink_url()
+                            .map(|s| vec![s])
+                            .ok_or(anyhow!("Failed to extract permalink_url"));
                         break 'root;
                     }
                     Key::Char('\n') => {

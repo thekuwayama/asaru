@@ -31,12 +31,10 @@ impl State {
         Ok(self)
     }
 
-    pub fn get_permalink_urls(&self, indexes: &[usize]) -> Vec<String> {
-        indexes
-            .iter()
-            .filter_map(|i| self.tasks.get(*i))
-            .filter_map(|t| t.get_permalink_url(&self.pats).ok())
-            .collect::<Vec<_>>()
+    pub fn get_permalink_url(&self) -> Option<String> {
+        self.tasks
+            .get(self.index)
+            .and_then(|t| t.get_permalink_url(&self.pats).ok())
     }
 
     pub fn get_titles(&self) -> Vec<String> {
