@@ -34,10 +34,8 @@ impl State {
     pub fn get_permalink_urls(&self, indexes: &[usize]) -> Vec<String> {
         indexes
             .iter()
-            .map(|i| self.tasks.get(*i))
-            .flat_map(|r| r)
-            .map(|t| t.get_permalink_url(&self.pats))
-            .flat_map(|r| r)
+            .filter_map(|i| self.tasks.get(*i))
+            .filter_map(|t| t.get_permalink_url(&self.pats).ok())
             .collect::<Vec<_>>()
     }
 
@@ -65,10 +63,8 @@ impl State {
     pub fn get_checked_permalink_urls(&self) -> Vec<String> {
         self.checked
             .iter()
-            .map(|i| self.tasks.get(*i))
-            .flat_map(|r| r)
-            .map(|t| t.get_permalink_url(&self.pats))
-            .flat_map(|r| r)
+            .filter_map(|i| self.tasks.get(*i))
+            .filter_map(|t| t.get_permalink_url(&self.pats).ok())
             .collect::<Vec<_>>()
     }
 }

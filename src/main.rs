@@ -30,7 +30,9 @@ fn main() {
     let pats = matches.value_of("pats").expect("Failed to specify pats");
 
     match terminal::run(workspace_gid, pats) {
-        Ok(res) => res.iter().for_each(|url| println!("{}", url)),
+        Ok(res) => {
+            res.iter().for_each(|url| println!("{}", url));
+        }
         Err(err) => {
             eprintln!("{}", err);
             process::exit(1);
