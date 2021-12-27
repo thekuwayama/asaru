@@ -5,7 +5,7 @@ use termion::cursor::{self, DetectCursorPos};
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
-use termion::{clear, color, screen};
+use termion::{clear, color, screen, terminal_size};
 
 use crate::controller;
 
@@ -178,45 +178,44 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
 fn show<W: Write>(screen: &mut W, state: &controller::State, opt: Option<usize>) -> Result<()> {
     write!(screen, "{}{}", clear::All, cursor::Goto(BOL, PROMPT_LINE))?;
 
-    write!(screen, "{}{}{}", state.text, CRLF, CRLF)?;
-    state
-        .get_titles()
-        .iter()
-        .enumerate()
-        .try_for_each(|(i, s)| match opt {
-            Some(index) if i == index && state.is_checked(&i) => {
-                write!(
-                    screen,
-                    "> {}{}{}{}",
-                    color::Bg(color::LightMagenta),
-                    s,
-                    CRLF,
-                    color::Bg(color::Reset),
-                )
-            }
-            Some(index) if i == index => write!(screen, "> {}{}", s, CRLF),
-            Some(_) if state.is_checked(&i) => {
-                write!(
-                    screen,
-                    "  {}{}{}{}",
-                    color::Bg(color::LightMagenta),
-                    s,
-                    CRLF,
-                    color::Bg(color::Reset),
-                )
-            }
-            None if state.is_checked(&i) => {
-                write!(
-                    screen,
-                    "  {}{}{}{}",
-                    color::Bg(color::LightMagenta),
-                    s,
-                    CRLF,
-                    color::Bg(color::Reset),
-                )
-            }
-            _ => write!(screen, "  {}{}", s, CRLF),
-        })?;
+    write!(screen, "{}{}", state.text, CRLF)?;
+    let (_, row) = terminal_size()?;
+    let mut titles = state.get_titles();
+    titles.truncate((row - 2) as usize);
+    titles.iter().enumerate().try_for_each(|(i, s)| match opt {
+        Some(index) if i == index && state.is_checked(&i) => {
+            write!(
+                screen,
+                "{}> {}{}{}",
+                CRLF,
+                color::Bg(color::LightMagenta),
+                s,
+                color::Bg(color::Reset),
+            )
+        }
+        Some(index) if i == index => write!(screen, "{}> {}", CRLF, s),
+        Some(_) if state.is_checked(&i) => {
+            write!(
+                screen,
+                "{}  {}{}{}",
+                CRLF,
+                color::Bg(color::LightMagenta),
+                s,
+                color::Bg(color::Reset),
+            )
+        }
+        None if state.is_checked(&i) => {
+            write!(
+                screen,
+                "{}  {}{}{}",
+                CRLF,
+                color::Bg(color::LightMagenta),
+                s,
+                color::Bg(color::Reset),
+            )
+        }
+        _ => write!(screen, "{}  {}", CRLF, s),
+    })?;
     screen.flush()?;
 
     Ok(())
