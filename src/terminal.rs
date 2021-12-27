@@ -38,12 +38,14 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     Key::Ctrl('c') => break 'root,
                     Key::Char('\n') => {
                         state.search()?;
-                        state.index = 0;
-                        show(&mut screen, &state, Some(state.index))?;
+                        if !state.tasks.is_empty() {
+                            state.index = 0;
+                            show(&mut screen, &state, Some(state.index))?;
 
-                        write!(screen, "{}", cursor::Hide)?;
-                        screen.flush()?;
-                        mode = Mode::Results;
+                            write!(screen, "{}", cursor::Hide)?;
+                            screen.flush()?;
+                            mode = Mode::Results;
+                        }
                     }
                     Key::Left | Key::Ctrl('b') => {
                         let (x, _) = screen.cursor_pos()?;
@@ -149,9 +151,16 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         }
                         show(&mut screen, &state, Some(state.index))?;
                     }
-                    Key::Char('\n') => {
+                    Key::Char('\n') if state.checked.is_empty() => {
                         result = Ok(state.get_permalink_urls(&[state.index]));
                         break 'root;
+                    }
+                    Key::Char('\n') => {
+                        result = Ok(state.get_checked_permalink_urls());
+                        break 'root;
+                    }
+                    Key::Char('\t') => {
+                        state.check();
                     }
                     _ => continue,
                 },
