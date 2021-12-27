@@ -24,10 +24,8 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     write!(screen, "{}", clear::All)?;
 
     let mut state = controller::State::new(workspace_gid, pats);
-    show(&mut screen, &state, None)?;
-
-    write!(screen, "{}{}", cursor::Goto(BOL, PROMPT_LINE), cursor::Show)?;
-    screen.flush()?;
+    show_state(&mut screen, &state, None)?;
+    show_cursor(&mut screen, BOL, PROMPT_LINE)?;
     let mut mode = Mode::Prompt;
     let mut result = Ok(Vec::new());
     'root: loop {
@@ -42,83 +40,59 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         if !state.tasks.is_empty() {
                             state.index = 0;
                             state.checked.clear();
-                            show(&mut screen, &state, Some(state.index))?;
-
-                            write!(screen, "{}", cursor::Hide)?;
-                            screen.flush()?;
+                            show_state(&mut screen, &state, Some(state.index))?;
+                            hide_cursor(&mut screen)?;
                             mode = Mode::Results;
                         } else {
                             let (x, _) = screen.cursor_pos()?;
                             state.checked.clear();
-                            show(&mut screen, &state, Some(state.index))?;
-
-                            write!(screen, "{}", cursor::Goto(x, PROMPT_LINE))?;
-                            screen.flush()?;
+                            show_state(&mut screen, &state, Some(state.index))?;
+                            show_cursor(&mut screen, x, PROMPT_LINE)?;
                         }
                     }
                     Key::Left | Key::Ctrl('b') => {
                         let (x, _) = screen.cursor_pos()?;
                         if x > 1 {
-                            write!(screen, "{}", cursor::Goto(x - 1, PROMPT_LINE))?;
-                            screen.flush()?;
+                            show_cursor(&mut screen, x - 1, PROMPT_LINE)?;
                         }
                     }
                     Key::Right | Key::Ctrl('f') => {
                         let (x, _) = screen.cursor_pos()?;
                         if x < state.text.len() as u16 + 1 {
-                            write!(screen, "{}", cursor::Goto(x + 1, PROMPT_LINE))?;
-                            screen.flush()?;
+                            show_cursor(&mut screen, x + 1, PROMPT_LINE)?;
                         }
                     }
                     Key::Char(c) => {
                         let (x, _) = screen.cursor_pos()?;
                         state.text.insert((x - 1) as usize, c);
-                        show(&mut screen, &state, None)?;
-
-                        write!(screen, "{}", cursor::Goto(x + 1, PROMPT_LINE))?;
-                        screen.flush()?;
+                        show_state(&mut screen, &state, None)?;
+                        show_cursor(&mut screen, x + 1, PROMPT_LINE)?;
                     }
                     Key::Backspace | Key::Ctrl('h') => {
                         let (x, _) = screen.cursor_pos()?;
                         if x > 1 && !state.text.is_empty() {
                             state.text.remove((x - 2) as usize);
-                            show(&mut screen, &state, None)?;
-
-                            write!(screen, "{}", cursor::Goto(x - 1, PROMPT_LINE))?;
-                            screen.flush()?;
+                            show_state(&mut screen, &state, None)?;
+                            show_cursor(&mut screen, x - 1, PROMPT_LINE)?;
                         }
                     }
                     Key::Ctrl('a') => {
-                        write!(screen, "{}", cursor::Goto(BOL, PROMPT_LINE))?;
-                        screen.flush()?;
+                        show_cursor(&mut screen, BOL, PROMPT_LINE)?;
                     }
                     Key::Ctrl('e') => {
-                        write!(
-                            screen,
-                            "{}",
-                            cursor::Goto(state.text.len() as u16 + 1, PROMPT_LINE)
-                        )?;
-                        screen.flush()?;
+                        show_cursor(&mut screen, state.text.len() as u16 + 1, PROMPT_LINE)?;
                     }
                     Key::Ctrl('k') => {
                         let (x, _) = screen.cursor_pos()?;
                         state.text.truncate((x - 1) as usize);
-                        show(&mut screen, &state, None)?;
-
-                        write!(
-                            screen,
-                            "{}",
-                            cursor::Goto(state.text.len() as u16 + 1, PROMPT_LINE)
-                        )?;
-                        screen.flush()?;
+                        show_state(&mut screen, &state, None)?;
+                        show_cursor(&mut screen, state.text.len() as u16 + 1, PROMPT_LINE)?;
                     }
                     Key::Down | Key::Ctrl('n') => {
                         if !state.tasks.is_empty() {
                             state.index = 0;
-                            show(&mut screen, &state, Some(state.index))?;
-
-                            write!(screen, "{}", cursor::Hide)?;
-                            screen.flush()?;
+                            show_state(&mut screen, &state, Some(state.index))?;
+                            hide_cursor(&mut screen)?;
                             mode = Mode::Results;
                         }
                     }
@@ -127,39 +101,25 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                 Mode::Results => match c? {
                     Key::Ctrl('c') => break 'root,
                     Key::Ctrl('s') => {
-                        show(&mut screen, &state, None)?;
-
-                        write!(
-                            screen,
-                            "{}{}",
-                            cursor::Goto(state.text.len() as u16 + 1, PROMPT_LINE),
-                            cursor::Show
-                        )?;
-                        screen.flush()?;
+                        show_state(&mut screen, &state, None)?;
+                        show_cursor(&mut screen, state.text.len() as u16 + 1, PROMPT_LINE)?;
                         mode = Mode::Prompt;
                     }
                     Key::Up | Key::Ctrl('p') => {
                         if state.index <= 0 {
-                            show(&mut screen, &state, None)?;
-
-                            write!(
-                                screen,
-                                "{}{}",
-                                cursor::Goto(state.text.len() as u16 + 1, PROMPT_LINE),
-                                cursor::Show
-                            )?;
-                            screen.flush()?;
+                            show_state(&mut screen, &state, None)?;
+                            show_cursor(&mut screen, state.text.len() as u16 + 1, PROMPT_LINE)?;
                             mode = Mode::Prompt;
                         } else {
                             state.index -= 1;
-                            show(&mut screen, &state, Some(state.index))?;
+                            show_state(&mut screen, &state, Some(state.index))?;
                         }
                     }
                     Key::Down | Key::Ctrl('n') => {
                         let (_, row) = terminal_size()?;
                         if state.index + 1 < state.tasks.len() && state.index as u16 + 3 < row {
                             state.index += 1;
-                            show(&mut screen, &state, Some(state.index))?;
+                            show_state(&mut screen, &state, Some(state.index))?;
                         }
                     }
                     Key::Char('\n') => {
@@ -175,7 +135,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     }
                     Key::Char('\t') => {
                         state.check();
-                        show(&mut screen, &state, Some(state.index))?;
+                        show_state(&mut screen, &state, Some(state.index))?;
                     }
                     _ => continue,
                 },
@@ -188,7 +148,11 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     result
 }
 
-fn show<W: Write>(screen: &mut W, state: &controller::State, opt: Option<usize>) -> Result<()> {
+fn show_state<W: Write>(
+    screen: &mut W,
+    state: &controller::State,
+    opt: Option<usize>,
+) -> Result<()> {
     write!(screen, "{}{}", clear::All, cursor::Goto(BOL, PROMPT_LINE))?;
 
     write!(screen, "{}{}", state.text, CRLF)?;
@@ -229,6 +193,20 @@ fn show<W: Write>(screen: &mut W, state: &controller::State, opt: Option<usize>)
         }
         _ => write!(screen, "{}  {}", CRLF, s),
     })?;
+    screen.flush()?;
+
+    Ok(())
+}
+
+fn show_cursor<W: Write>(screen: &mut W, x: u16, y: u16) -> Result<()> {
+    write!(screen, "{}{}", cursor::Goto(x, y), cursor::Show)?;
+    screen.flush()?;
+
+    Ok(())
+}
+
+fn hide_cursor<W: Write>(screen: &mut W) -> Result<()> {
+    write!(screen, "{}", cursor::Hide)?;
     screen.flush()?;
 
     Ok(())
