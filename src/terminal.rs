@@ -101,15 +101,27 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         )?;
                         screen.flush()?;
                     }
+                    Key::Down | Key::Ctrl('n') if !state.tasks.is_empty() => {
+                        state.index = 0;
+                        show(&mut screen, &state, Some(state.index))?;
+
+                        write!(screen, "{}", cursor::Hide)?;
+                        screen.flush()?;
+                        mode = Mode::Results;
+                    }
                     _ => continue,
                 },
                 Mode::Results => match c? {
                     Key::Ctrl('c') => break 'root,
                     Key::Ctrl('s') => {
-                        state.text.clear();
                         show(&mut screen, &state, None)?;
 
-                        write!(screen, "{}{}", cursor::Goto(1, PROMPT_LINE), cursor::Show)?;
+                        write!(
+                            screen,
+                            "{}{}",
+                            cursor::Goto(state.text.len() as u16 + 1, PROMPT_LINE),
+                            cursor::Show
+                        )?;
                         screen.flush()?;
                         mode = Mode::Prompt;
                     }
@@ -118,6 +130,18 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             state.index += 1;
                         }
                         show(&mut screen, &state, Some(state.index))?;
+                    }
+                    Key::Up | Key::Ctrl('p') if state.index <= 0 => {
+                        show(&mut screen, &state, None)?;
+
+                        write!(
+                            screen,
+                            "{}{}",
+                            cursor::Goto(state.text.len() as u16 + 1, PROMPT_LINE),
+                            cursor::Show
+                        )?;
+                        screen.flush()?;
+                        mode = Mode::Prompt;
                     }
                     Key::Up | Key::Ctrl('p') => {
                         if state.index > 0 {
