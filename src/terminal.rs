@@ -47,6 +47,13 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             write!(screen, "{}", cursor::Hide)?;
                             screen.flush()?;
                             mode = Mode::Results;
+                        } else {
+                            let (x, _) = screen.cursor_pos()?;
+                            state.checked.clear();
+                            show(&mut screen, &state, Some(state.index))?;
+
+                            write!(screen, "{}", cursor::Goto(x, PROMPT_LINE))?;
+                            screen.flush()?;
                         }
                     }
                     Key::Left | Key::Ctrl('b') => {
@@ -105,13 +112,15 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         )?;
                         screen.flush()?;
                     }
-                    Key::Down | Key::Ctrl('n') if !state.tasks.is_empty() => {
-                        state.index = 0;
-                        show(&mut screen, &state, Some(state.index))?;
+                    Key::Down | Key::Ctrl('n') => {
+                        if !state.tasks.is_empty() {
+                            state.index = 0;
+                            show(&mut screen, &state, Some(state.index))?;
 
-                        write!(screen, "{}", cursor::Hide)?;
-                        screen.flush()?;
-                        mode = Mode::Results;
+                            write!(screen, "{}", cursor::Hide)?;
+                            screen.flush()?;
+                            mode = Mode::Results;
+                        }
                     }
                     _ => continue,
                 },
@@ -129,39 +138,39 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         screen.flush()?;
                         mode = Mode::Prompt;
                     }
-                    Key::Up | Key::Ctrl('p') if state.index <= 0 => {
-                        show(&mut screen, &state, None)?;
-
-                        write!(
-                            screen,
-                            "{}{}",
-                            cursor::Goto(state.text.len() as u16 + 1, PROMPT_LINE),
-                            cursor::Show
-                        )?;
-                        screen.flush()?;
-                        mode = Mode::Prompt;
-                    }
                     Key::Up | Key::Ctrl('p') => {
-                        if state.index > 0 {
+                        if state.index <= 0 {
+                            show(&mut screen, &state, None)?;
+
+                            write!(
+                                screen,
+                                "{}{}",
+                                cursor::Goto(state.text.len() as u16 + 1, PROMPT_LINE),
+                                cursor::Show
+                            )?;
+                            screen.flush()?;
+                            mode = Mode::Prompt;
+                        } else {
                             state.index -= 1;
+                            show(&mut screen, &state, Some(state.index))?;
                         }
-                        show(&mut screen, &state, Some(state.index))?;
                     }
                     Key::Down | Key::Ctrl('n') => {
-                        if state.index + 1 < state.tasks.len() {
+                        let (_, row) = terminal_size()?;
+                        if state.index + 1 < state.tasks.len() && state.index as u16 + 3 < row {
                             state.index += 1;
+                            show(&mut screen, &state, Some(state.index))?;
                         }
-                        show(&mut screen, &state, Some(state.index))?;
-                    }
-                    Key::Char('\n') if state.checked.is_empty() => {
-                        result = state
-                            .get_permalink_url()
-                            .map(|s| vec![s])
-                            .ok_or(anyhow!("Failed to extract permalink_url"));
-                        break 'root;
                     }
                     Key::Char('\n') => {
-                        result = Ok(state.get_checked_permalink_urls());
+                        if state.checked.is_empty() {
+                            result = state
+                                .get_permalink_url()
+                                .map(|s| vec![s])
+                                .ok_or(anyhow!("Failed to extract permalink_url"));
+                        } else {
+                            result = Ok(state.get_checked_permalink_urls());
+                        }
                         break 'root;
                     }
                     Key::Char('\t') => {
