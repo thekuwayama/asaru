@@ -5,10 +5,11 @@ use anyhow::Result;
 use crate::asana;
 
 pub struct State {
+    workspace_gid: String,
+    pats: String,
+
     pub text: String,
     pub tasks: Vec<asana::SearchTasksData>,
-    workspace_gid: String,
-    pub pats: String,
     pub index: usize,
     pub checked: HashSet<usize>,
 }
