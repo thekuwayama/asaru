@@ -10,7 +10,9 @@ use termion::{clear, color, screen, terminal_size};
 use crate::controller;
 
 const BOL: u16 = 1;
-const PROMPT_LINE: u16 = 1;
+const FL: u16 = 1;
+const PROMPT_LINE: u16 = 3;
+const MENU_BAR: &str = "Asaru | Ctrl-c: Exit | Ctrl-s: Search | TAB: Select | Enter: Execute";
 const CRLF: &str = "\r\n";
 
 enum Mode {
@@ -21,7 +23,7 @@ enum Mode {
 pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     let mut stdin = stdin().keys();
     let mut screen = screen::AlternateScreen::from(stdout().into_raw_mode()?);
-    write!(screen, "{}", clear::All)?;
+    write!(screen, "{}{}", clear::All, color::Fg(color::LightWhite))?;
 
     let mut state = controller::State::new(workspace_gid, pats);
     show_state(&mut screen, &state, None)?;
@@ -116,8 +118,8 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         }
                     }
                     Key::Down | Key::Ctrl('n') => {
-                        let (_, row) = terminal_size()?;
-                        if state.index + 1 < state.tasks.len() && state.index as u16 + 3 < row {
+                        let (_, h) = terminal_size()?;
+                        if state.index + 1 < state.tasks.len() && state.index as u16 + 3 < h {
                             state.index += 1;
                             show_state(&mut screen, &state, Some(state.index))?;
                         }
@@ -130,7 +132,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                                 .ok_or(anyhow!("Failed to extract permalink_url"));
                         } else {
                             let urls = state.get_checked_permalink_urls();
-                            if state.checked.len() != urls.len() {
+                            if state.checked.len() == urls.len() {
                                 result = Ok(urls);
                             } else {
                                 result = Err(anyhow!("Failed to extract permalink_url"));
@@ -158,19 +160,28 @@ fn show_state<W: Write>(
     state: &controller::State,
     opt: Option<usize>,
 ) -> Result<()> {
-    write!(screen, "{}{}", clear::All, cursor::Goto(BOL, PROMPT_LINE))?;
+    let (w, h) = terminal_size()?;
+    write!(screen, "{}{}", clear::All, cursor::Goto(BOL, FL))?;
 
-    write!(screen, "{}{}", state.text, CRLF)?;
-    let (_, row) = terminal_size()?;
+    write!(
+        screen,
+        "{}{}{}{}",
+        color::Bg(color::LightMagenta),
+        format!("{:<width$}", MENU_BAR, width = w as usize),
+        color::Bg(color::Reset),
+        CRLF,
+    )?;
+
+    write!(screen, "{}{}{}", CRLF, state.text, CRLF)?;
     let mut titles = state.get_titles();
-    titles.truncate((row - 2) as usize);
+    titles.truncate((h - 2) as usize);
     titles.iter().enumerate().try_for_each(|(i, s)| match opt {
         Some(index) if i == index && state.is_checked(&i) => {
             write!(
                 screen,
                 "{}> {}{}{}",
                 CRLF,
-                color::Bg(color::LightMagenta),
+                color::Bg(color::Magenta),
                 s,
                 color::Bg(color::Reset),
             )
@@ -181,7 +192,7 @@ fn show_state<W: Write>(
                 screen,
                 "{}  {}{}{}",
                 CRLF,
-                color::Bg(color::LightMagenta),
+                color::Bg(color::Magenta),
                 s,
                 color::Bg(color::Reset),
             )
@@ -191,7 +202,7 @@ fn show_state<W: Write>(
                 screen,
                 "{}  {}{}{}",
                 CRLF,
-                color::Bg(color::LightMagenta),
+                color::Bg(color::Magenta),
                 s,
                 color::Bg(color::Reset),
             )
