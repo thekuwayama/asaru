@@ -37,7 +37,7 @@ ARGS:
 
 ## Settings
 
-You can understand Workspaces:
+You can read descriptions about Workspaces:
 
 - https://asana.com/ja/guide/help/workspaces/basics
 
@@ -45,7 +45,7 @@ You can get all your accessible workspace IDs:
 
 - https://app.asana.com/api/1.0/workspaces
 
-You can issue your Personal Access Tokens:
+You can issue your PATs:
 
 - https://app.asana.com/0/my-apps
 
