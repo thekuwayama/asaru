@@ -10,7 +10,8 @@ use termion::{clear, color, screen, terminal_size};
 use crate::controller;
 
 const BOL: u16 = 1;
-const FL: u16 = 1;
+const BOP: u16 = 3;
+const FIRST_LINE: u16 = 1;
 const PROMPT_LINE: u16 = 3;
 const MENU_BAR: &str = "Asaru | Ctrl-c: Exit | Ctrl-s: Search | TAB: Select | Enter: Execute";
 const CRLF: &str = "\r\n";
@@ -27,7 +28,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
 
     let mut state = controller::State::new(workspace_gid, pats);
     show_state(&mut screen, &state, None)?;
-    show_cursor(&mut screen, BOL, PROMPT_LINE)?;
+    show_cursor(&mut screen, BOP, PROMPT_LINE)?;
     let mut mode = Mode::Prompt;
     let mut result = Ok(Vec::new());
     'root: loop {
@@ -66,29 +67,29 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     }
                     Key::Char(c) => {
                         let (x, _) = screen.cursor_pos()?;
-                        state.text.insert((x - 1) as usize, c);
+                        state.text.insert((x - BOP) as usize, c);
                         show_state(&mut screen, &state, None)?;
                         show_cursor(&mut screen, x + 1, PROMPT_LINE)?;
                     }
                     Key::Backspace | Key::Ctrl('h') => {
                         let (x, _) = screen.cursor_pos()?;
                         if x > 1 && !state.text.is_empty() {
-                            state.text.remove((x - 2) as usize);
+                            state.text.remove((x - BOP - 1) as usize);
                             show_state(&mut screen, &state, None)?;
                             show_cursor(&mut screen, x - 1, PROMPT_LINE)?;
                         }
                     }
                     Key::Ctrl('a') => {
-                        show_cursor(&mut screen, BOL, PROMPT_LINE)?;
+                        show_cursor(&mut screen, BOP, PROMPT_LINE)?;
                     }
                     Key::Ctrl('e') => {
-                        show_cursor(&mut screen, state.text.len() as u16 + 1, PROMPT_LINE)?;
+                        show_cursor(&mut screen, state.text.len() as u16 + BOP, PROMPT_LINE)?;
                     }
                     Key::Ctrl('k') => {
                         let (x, _) = screen.cursor_pos()?;
-                        state.text.truncate((x - 1) as usize);
+                        state.text.truncate((x - BOP) as usize);
                         show_state(&mut screen, &state, None)?;
-                        show_cursor(&mut screen, state.text.len() as u16 + 1, PROMPT_LINE)?;
+                        show_cursor(&mut screen, state.text.len() as u16 + BOP, PROMPT_LINE)?;
                     }
                     Key::Down | Key::Ctrl('n') => {
                         if !state.tasks.is_empty() {
@@ -104,13 +105,13 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     Key::Ctrl('c') => break 'root,
                     Key::Ctrl('s') => {
                         show_state(&mut screen, &state, None)?;
-                        show_cursor(&mut screen, state.text.len() as u16 + 1, PROMPT_LINE)?;
+                        show_cursor(&mut screen, state.text.len() as u16 + BOP, PROMPT_LINE)?;
                         mode = Mode::Prompt;
                     }
                     Key::Up | Key::Ctrl('p') => {
                         if state.index <= 0 {
                             show_state(&mut screen, &state, None)?;
-                            show_cursor(&mut screen, state.text.len() as u16 + 1, PROMPT_LINE)?;
+                            show_cursor(&mut screen, state.text.len() as u16 + BOP, PROMPT_LINE)?;
                             mode = Mode::Prompt;
                         } else {
                             state.index -= 1;
@@ -163,7 +164,7 @@ fn show_state<W: Write>(
     opt: Option<usize>,
 ) -> Result<()> {
     let (w, h) = terminal_size()?;
-    write!(screen, "{}{}", clear::All, cursor::Goto(BOL, FL))?;
+    write!(screen, "{}{}", clear::All, cursor::Goto(BOL, FIRST_LINE))?;
 
     write!(
         screen,
@@ -174,7 +175,7 @@ fn show_state<W: Write>(
         CRLF,
     )?;
 
-    write!(screen, "{}{}{}", CRLF, state.text, CRLF)?;
+    write!(screen, "{}$ {}{}", CRLF, state.text, CRLF)?;
     let mut titles = state.get_titles();
     titles.truncate((h - 2) as usize);
     titles.iter().enumerate().try_for_each(|(i, s)| match opt {
