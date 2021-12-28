@@ -144,7 +144,11 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         break 'root;
                     }
                     Key::Char('\t') => {
-                        state.check();
+                        if state.is_checked(&state.index) {
+                            state.uncheck();
+                        } else {
+                            state.check();
+                        }
                         show_state(&mut screen, &state, Some(state.index))?;
                     }
                     _ => continue,

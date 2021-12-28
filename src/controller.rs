@@ -49,14 +49,14 @@ impl State {
         self.checked.contains(index)
     }
 
-    pub fn check(&mut self) -> Option<usize> {
-        if self.tasks.is_empty() {
-            return None;
+    pub fn check(&mut self) {
+        if self.tasks.len() > self.index {
+            self.checked.insert(self.index);
         }
+    }
 
-        self.checked.insert(self.index);
-
-        Some(self.index)
+    pub fn uncheck(&mut self) {
+        self.checked.remove(&self.index);
     }
 
     pub fn get_checked_permalink_urls(&self) -> Vec<String> {
