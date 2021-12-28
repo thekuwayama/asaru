@@ -1,5 +1,7 @@
 # Asaru
 
+[![Apache-2.0 licensed](https://img.shields.io/badge/license-Apache2-blue.svg)](https://raw.githubusercontent.com/thekuwayama/asaru/main/LICENSE-APACHE)
+
 Asaru (`漁る` - look for) is CLI to search Asana Tasks, by which you can do the interactive-search.
 
 
@@ -33,6 +35,18 @@ ARGS:
 
 
 ## Settings
+
+You can understand Workspaces:
+
+- https://asana.com/ja/guide/help/workspaces/basics
+
+You can get all your accessible workspace IDs:
+
+- https://app.asana.com/api/1.0/workspaces
+
+You can issue your Personal Access Tokens:
+
+- https://app.asana.com/0/my-apps
 
 ```sh-session
 $ mkdir $HOME/.asaru
