@@ -119,7 +119,9 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     }
                     Key::Down | Key::Ctrl('n') => {
                         let (_, h) = terminal_size()?;
-                        if state.index + 1 < state.tasks.len() && state.index as u16 + 3 < h {
+                        if state.index + 1 < state.tasks.len()
+                            && state.index as u16 + PROMPT_LINE < h
+                        {
                             state.index += 1;
                             show_state(&mut screen, &state, Some(state.index))?;
                         }
