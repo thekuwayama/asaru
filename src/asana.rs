@@ -8,9 +8,8 @@ use serde_json::Value;
 pub struct SearchTasksData {
     gid: String,
     pub name: String,
+    #[allow(dead_code)]
     resource_type: String,
-    #[serde(skip)]
-    workspace_gid: String,
 }
 
 #[derive(Deserialize, Debug)]

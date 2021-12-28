@@ -34,7 +34,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     'root: loop {
         let input = stdin.next();
 
-        for c in input {
+        if let Some(c) = input {
             match mode {
                 Mode::Prompt => match c? {
                     Key::Ctrl('c') => break 'root,
@@ -109,13 +109,13 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         mode = Mode::Prompt;
                     }
                     Key::Up | Key::Ctrl('p') => {
-                        if state.index <= 0 {
+                        if state.index > 0 {
+                            state.index -= 1;
+                            show_state(&mut screen, &state, Some(state.index))?;
+                        } else {
                             show_state(&mut screen, &state, None)?;
                             show_cursor(&mut screen, state.text.len() as u16 + BOP, PROMPT_LINE)?;
                             mode = Mode::Prompt;
-                        } else {
-                            state.index -= 1;
-                            show_state(&mut screen, &state, Some(state.index))?;
                         }
                     }
                     Key::Down | Key::Ctrl('n') => {
