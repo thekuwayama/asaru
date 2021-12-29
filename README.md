@@ -57,7 +57,7 @@ $ echo -n $WORKSPACE_GID > $HOME/.asaru/workspace_gid
 
 $ echo -n $PATS > $HOME/.asaru/pats
 
-$ echo "alias asaru='asaru \$(cat \$HOME/.asaru/workspace_gid) \$(cat \$HOME/.asaru/pats) $HOME/.asaru/tmp && cat $HOME/.asaru/tmp | xargs open | rm -f $HOME/.asaru/tmp'" >> $HOME/.bashrc
+$ echo "alias asaru='asaru \$(cat \$HOME/.asaru/workspace_gid) \$(cat \$HOME/.asaru/pats) \$HOME/.asaru/tmp && cat \$HOME/.asaru/tmp | xargs open && rm -f \$HOME/.asaru/tmp'" >> $HOME/.bashrc
 
 $ source $HOME/.bashrc
 ```
