@@ -23,7 +23,7 @@ asaru 0.1.0
 Asana Tasks Search CLI
 
 USAGE:
-    asaru <workspace_gid> <pats>
+    asaru <workspace_gid> <pats> [file]
 
 FLAGS:
     -h, --help       Prints help information
@@ -32,6 +32,7 @@ FLAGS:
 ARGS:
     <workspace_gid>    Globally unique identifier for the workspace or organization
     <pats>             Personal Access Tokens (PATs)
+    <file>             Output file
 ```
 
 
@@ -56,7 +57,7 @@ $ echo -n $WORKSPACE_GID > $HOME/.asaru/workspace_gid
 
 $ echo -n $PATS > $HOME/.asaru/pats
 
-$ echo "alias asaru='asaru \$(cat \$HOME/.asaru/workspace_gid) \$(cat \$HOME/.asaru/pats)'" >> $HOME/.bashrc
+$ echo "alias asaru='asaru \$(cat \$HOME/.asaru/workspace_gid) \$(cat \$HOME/.asaru/pats) $HOME/.asaru/tmp && cat $HOME/.asaru/tmp | xargs open | rm -f $HOME/.asaru/tmp'" >> $HOME/.bashrc
 
 $ source $HOME/.bashrc
 ```
