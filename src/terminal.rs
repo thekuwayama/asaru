@@ -13,6 +13,7 @@ const BOL: u16 = 1;
 const BOP: u16 = 3;
 const FIRST_LINE: u16 = 1;
 const PROMPT_LINE: u16 = 3;
+const RESULTS_LINE: u16 = 5;
 const MENU_BAR: &str = "Asaru | Ctrl-c: Exit | Ctrl-s: Search | TAB: Select | Enter: Execute";
 const CRLF: &str = "\r\n";
 
@@ -121,7 +122,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     Key::Down | Key::Ctrl('n') => {
                         let (_, h) = terminal_size()?;
                         if state.index + 1 < state.tasks.len()
-                            && state.index as u16 + PROMPT_LINE < h
+                            && state.index as u16 + RESULTS_LINE < h
                         {
                             state.index += 1;
                             show_state(&mut screen, &state, Some(state.index))?;
@@ -181,7 +182,7 @@ fn show_state<W: Write>(
 
     write!(screen, "{}$ {}{}", CRLF, state.text, CRLF)?;
     let mut titles = state.get_titles();
-    titles.truncate((h - 2) as usize);
+    titles.truncate((h - PROMPT_LINE - 1) as usize);
     titles.iter().enumerate().try_for_each(|(i, s)| match opt {
         Some(index) if i == index && state.is_checked(&i) => {
             write!(
