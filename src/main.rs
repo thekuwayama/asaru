@@ -1,6 +1,9 @@
 #[macro_use]
 extern crate clap;
 
+use std::env;
+use std::fs::OpenOptions;
+use std::io::{stdout, Write};
 use std::process;
 
 use clap::{App, Arg};
@@ -22,20 +25,37 @@ fn main() {
             Arg::with_name("pats")
                 .help("Personal Access Tokens (PATs)")
                 .required(true),
-        );
+        )
+        .arg(Arg::with_name("file").help("Output file").required(false));
     let matches = cli.get_matches();
     let workspace_gid = matches
         .value_of("workspace_gid")
-        .expect("Failed to specify workspace_gid");
-    let pats = matches.value_of("pats").expect("Failed to specify pats");
+        .expect("Error: Failed to specify workspace_gid");
+    let pats = matches
+        .value_of("pats")
+        .expect("Error: Failed to specify pats");
+    let file = matches.value_of("file");
 
+    let mut w: Box<dyn Write> = match file {
+        Some(name) => Box::new(
+            OpenOptions::new()
+                .create(true)
+                .write(true)
+                .open(&name)
+                .expect(format!("Error: Failed to open \"{}\"", name).as_str()),
+        ),
+        _ => Box::new(stdout()),
+    };
     match terminal::run(workspace_gid, pats) {
         Ok(res) => {
-            res.iter().for_each(|url| println!("{}", url));
+            res.iter().for_each(|url| {
+                w.write_all(format!("{}\n", url).as_bytes())
+                    .expect("Error: Failed to print");
+            });
         }
         Err(err) => {
-            eprintln!("{}", err);
+            eprintln!("Error: {}", err);
             process::exit(1);
         }
-    }
+    };
 }
