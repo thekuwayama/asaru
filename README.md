@@ -14,7 +14,7 @@ Asaru (`漁る` - look for) is CLI to search Asana Tasks, by which you can do th
 You can install `asaru` with the following:
 
 ```sh-session
-$ cargo install --git https://github.com/thekuwayama/asaru.git --branch main
+$ cargo install asaru
 ```
 
 
