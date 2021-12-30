@@ -38,6 +38,24 @@ ARGS:
 ```
 
 
+## Key Manual
+
+| Key | Explanation |
+|--|--|
+| Ctrl-c | Exit `asaru` command. |
+| Ctrl-s | Move to Search Mode. |
+| TAB | Select(check/uncheck) search results. |
+| Enter| Search tasks if the cursor is at the prompt. Get task URLs if the cursor is at search results. |
+| Backspace / Ctrl-h | Delete the character to the left of the cursor if the cursor is at the prompt. |
+| ←  / Ctrl-b | Move the cursor left. |
+| →  / Ctrl-f | Move the cursor right. |
+| ↓  / Ctrl-n | Move the cursor down. |
+| ↑  / Ctrl-p | Move the cursor up. |
+| Ctrl-a | Move the cursor to the beginning of the text line. |
+| Ctrl-e | Move the cursor to the end of the text line. |
+| Ctrl-k | Delete all the text from the current cursor position to the end of the line if the cursor is at the prompt. |
+
+
 ## Settings
 
 You can read descriptions about Workspaces:
