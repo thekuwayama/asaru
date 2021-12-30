@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/asaru.svg)](https://crates.io/crates/asaru)
 [![CI](https://github.com/thekuwayama/asaru/workflows/CI/badge.svg)](https://github.com/thekuwayama/asaru/actions?workflow=CI)
-[![Apache-2.0 licensed](https://img.shields.io/badge/license-Apache2-blue.svg)](https://raw.githubusercontent.com/thekuwayama/asaru/main/LICENSE-APACHE)
+[![license](https://img.shields.io/crates/l/asaru.svg)](https://raw.githubusercontent.com/thekuwayama/asaru/main/LICENSE-APACHE)
 
 Asaru (`漁る` - look for) is CLI to search Asana Tasks, by which you can do the interactive-search.
 
