@@ -1,8 +1,12 @@
 [package]
 name = "asaru"
 version = "0.1.0"
-authors = ["thekuwayama <thekuwayama@gmail.com>"]
 description = "Asana Tasks Search CLI"
+repository = "https://github.com/thekuwayama/asaru"
+documentation = "https://docs.rs/asaru"
+authors = ["thekuwayama <thekuwayama@gmail.com>"]
+readme = "README.md"
+license = "MIT/Apache-2.0"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
