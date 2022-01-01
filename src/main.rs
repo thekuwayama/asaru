@@ -35,6 +35,13 @@ fn main() {
         .value_of("pats")
         .expect("Error: Failed to specify pats");
     let file = matches.value_of("file");
+    match asana::get_workspace(workspace_gid, pats) {
+        Ok(false) | Err(_) => {
+            eprintln!("Error: Failed to access workspace({})", workspace_gid);
+            process::exit(1);
+        }
+        _ => {}
+    };
 
     let mut w: Box<dyn Write> = match file {
         Some(name) => Box::new(

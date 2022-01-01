@@ -66,3 +66,16 @@ fn do_search_tasks(workspace_gid: &str, text: &str, pats: &str) -> Result<String
 
     Ok(res.text()?)
 }
+
+pub fn get_workspace(workspace_gid: &str, pats: &str) -> Result<bool> {
+    // NOTE: https://developers.asana.com/docs/get-a-workspace
+    let url = format!("https://app.asana.com/api/1.0/workspaces/{}", workspace_gid);
+    let cli = Client::new();
+    let res = cli.get(url).bearer_auth(pats).send()?;
+
+    if res.status() != StatusCode::OK {
+        return Err(anyhow!("Failed to access me"));
+    }
+
+    Ok(true)
+}
