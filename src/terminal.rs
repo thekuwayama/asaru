@@ -32,13 +32,13 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     show_cursor(&mut screen, BOP, PROMPT_LINE)?;
     let mut mode = Mode::Prompt;
     let mut result = Ok(Vec::new());
-    'root: loop {
+    loop {
         let input = stdin.next();
 
         if let Some(c) = input {
             match mode {
                 Mode::Prompt => match c? {
-                    Key::Ctrl('c') => break 'root,
+                    Key::Ctrl('c') => break,
                     Key::Char('\n') => {
                         state.search()?;
                         if !state.tasks.is_empty() {
@@ -103,7 +103,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     _ => continue,
                 },
                 Mode::Results => match c? {
-                    Key::Ctrl('c') => break 'root,
+                    Key::Ctrl('c') => break,
                     Key::Ctrl('s') => {
                         show_state(&mut screen, &state, None)?;
                         show_cursor(&mut screen, state.text.len() as u16 + BOP, PROMPT_LINE)?;
@@ -142,7 +142,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                                 result = Err(anyhow!("Failed to extract permalink_url"));
                             }
                         }
-                        break 'root;
+                        break;
                     }
                     Key::Char('\t') => {
                         if state.is_checked(&state.index) {
