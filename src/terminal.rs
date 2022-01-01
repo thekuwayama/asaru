@@ -56,13 +56,13 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     }
                     Key::Left | Key::Ctrl('b') => {
                         let (x, _) = screen.cursor_pos()?;
-                        if x > 1 {
+                        if x > BOP {
                             show_cursor(&mut screen, x - 1, PROMPT_LINE)?;
                         }
                     }
                     Key::Right | Key::Ctrl('f') => {
                         let (x, _) = screen.cursor_pos()?;
-                        if x < state.text.len() as u16 + 1 {
+                        if x < state.text.len() as u16 + BOP {
                             show_cursor(&mut screen, x + 1, PROMPT_LINE)?;
                         }
                     }
