@@ -230,11 +230,12 @@ fn show_state<W: Write>(
 
     write!(
         screen,
-        "{}{}{}{}",
+        "{}{:<width$}{}{}",
         color::Bg(color::LightMagenta),
-        format!("{:<width$}", MENU_BAR, width = w as usize),
+        MENU_BAR,
         color::Bg(color::Reset),
         CRLF,
+        width = w as usize,
     )?;
 
     write!(screen, "{}$ {}{}", CRLF, state.text, CRLF)?;
