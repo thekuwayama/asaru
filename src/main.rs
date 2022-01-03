@@ -49,7 +49,7 @@ fn main() {
                 .create(true)
                 .write(true)
                 .open(&name)
-                .expect(format!("Error: Failed to open \"{}\"", name).as_str()),
+                .unwrap_or_else(|_| panic!("Error: Failed to open \"{}\"", name)),
         ),
         _ => Box::new(stdout()),
     };

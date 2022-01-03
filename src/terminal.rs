@@ -6,6 +6,7 @@ use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 use termion::{clear, color, screen, terminal_size};
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use crate::controller;
 
@@ -57,40 +58,108 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     Key::Left | Key::Ctrl('b') => {
                         let (x, _) = screen.cursor_pos()?;
                         if x > BOP {
-                            show_cursor(&mut screen, x - 1, PROMPT_LINE)?;
+                            let v = state.text.chars().collect::<Vec<char>>();
+                            let w = v
+                                .iter()
+                                .enumerate()
+                                .map(|(i, _)| {
+                                    v[..i + 1]
+                                        .iter()
+                                        .map(|c| c.width().unwrap_or(1))
+                                        .sum::<usize>()
+                                })
+                                .position(|width| width as u16 == x - BOP)
+                                .map(|i| v[i].width().unwrap_or(1))
+                                .unwrap_or(0) as u16;
+
+                            show_cursor(&mut screen, x - w, PROMPT_LINE)?;
                         }
                     }
                     Key::Right | Key::Ctrl('f') => {
                         let (x, _) = screen.cursor_pos()?;
-                        if x < state.text.len() as u16 + BOP {
-                            show_cursor(&mut screen, x + 1, PROMPT_LINE)?;
+                        if x < state.text.width() as u16 + BOP {
+                            let v = state.text.chars().collect::<Vec<char>>();
+                            let w = v
+                                .iter()
+                                .enumerate()
+                                .map(|(i, _)| {
+                                    v[..i].iter().map(|c| c.width().unwrap_or(1)).sum::<usize>()
+                                })
+                                .position(|width| width as u16 == x - BOP)
+                                .map(|i| v[i].width().unwrap_or(1))
+                                .unwrap_or(0) as u16;
+
+                            show_cursor(&mut screen, x + w, PROMPT_LINE)?;
                         }
                     }
                     Key::Char(c) => {
                         let (x, _) = screen.cursor_pos()?;
-                        state.text.insert((x - BOP) as usize, c);
+                        let mut v = state.text.chars().collect::<Vec<char>>();
+                        let w = v
+                            .iter()
+                            .enumerate()
+                            .map(|(i, _)| {
+                                v[..i + 1]
+                                    .iter()
+                                    .map(|c| c.width().unwrap_or(1))
+                                    .sum::<usize>()
+                            })
+                            .position(|width| width as u16 == x - BOP)
+                            .map(|i| i + 1)
+                            .unwrap_or(0);
+                        v.insert(w, c);
+                        state.text = v.iter().collect::<String>();
+
                         show_state(&mut screen, &state, None)?;
-                        show_cursor(&mut screen, x + 1, PROMPT_LINE)?;
+                        show_cursor(&mut screen, x + c.width().unwrap_or(1) as u16, PROMPT_LINE)?;
                     }
                     Key::Backspace | Key::Ctrl('h') => {
                         let (x, _) = screen.cursor_pos()?;
-                        if x > 1 && !state.text.is_empty() {
-                            state.text.remove((x - BOP - 1) as usize);
+                        if x > BOP && !state.text.is_empty() {
+                            let mut v = state.text.chars().collect::<Vec<char>>();
+                            let i = v
+                                .iter()
+                                .enumerate()
+                                .map(|(i, _)| {
+                                    v[..i + 1]
+                                        .iter()
+                                        .map(|c| c.width().unwrap_or(1))
+                                        .sum::<usize>()
+                                })
+                                .position(|width| width as u16 == x - BOP);
+                            let w = i.map(|i| v.remove(i).width().unwrap_or(1)).unwrap_or(1) as u16;
+                            state.text = v.iter().collect::<String>();
+
                             show_state(&mut screen, &state, None)?;
-                            show_cursor(&mut screen, x - 1, PROMPT_LINE)?;
+                            show_cursor(&mut screen, x - w, PROMPT_LINE)?;
                         }
                     }
                     Key::Ctrl('a') => {
                         show_cursor(&mut screen, BOP, PROMPT_LINE)?;
                     }
                     Key::Ctrl('e') => {
-                        show_cursor(&mut screen, state.text.len() as u16 + BOP, PROMPT_LINE)?;
+                        show_cursor(&mut screen, state.text.width() as u16 + BOP, PROMPT_LINE)?;
                     }
                     Key::Ctrl('k') => {
                         let (x, _) = screen.cursor_pos()?;
-                        state.text.truncate((x - BOP) as usize);
+                        let mut v = state.text.chars().collect::<Vec<char>>();
+                        let w = v
+                            .iter()
+                            .enumerate()
+                            .map(|(i, _)| {
+                                v[..i + 1]
+                                    .iter()
+                                    .map(|c| c.width().unwrap_or(1))
+                                    .sum::<usize>()
+                            })
+                            .position(|width| width as u16 == x - BOP)
+                            .map(|i| i + 1)
+                            .unwrap_or(0);
+                        v.truncate(w);
+                        state.text = v.iter().collect::<String>();
+
                         show_state(&mut screen, &state, None)?;
-                        show_cursor(&mut screen, state.text.len() as u16 + BOP, PROMPT_LINE)?;
+                        show_cursor(&mut screen, state.text.width() as u16 + BOP, PROMPT_LINE)?;
                     }
                     Key::Down | Key::Ctrl('n') => {
                         if !state.tasks.is_empty() {
@@ -106,7 +175,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     Key::Ctrl('c') => break,
                     Key::Ctrl('s') => {
                         show_state(&mut screen, &state, None)?;
-                        show_cursor(&mut screen, state.text.len() as u16 + BOP, PROMPT_LINE)?;
+                        show_cursor(&mut screen, state.text.width() as u16 + BOP, PROMPT_LINE)?;
                         mode = Mode::Prompt;
                     }
                     Key::Up | Key::Ctrl('p') => {
@@ -115,7 +184,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             show_state(&mut screen, &state, Some(state.index))?;
                         } else {
                             show_state(&mut screen, &state, None)?;
-                            show_cursor(&mut screen, state.text.len() as u16 + BOP, PROMPT_LINE)?;
+                            show_cursor(&mut screen, state.text.width() as u16 + BOP, PROMPT_LINE)?;
                             mode = Mode::Prompt;
                         }
                     }
@@ -173,11 +242,12 @@ fn show_state<W: Write>(
 
     write!(
         screen,
-        "{}{}{}{}",
+        "{}{:<width$}{}{}",
         color::Bg(color::LightMagenta),
-        format!("{:<width$}", MENU_BAR, width = w as usize),
+        MENU_BAR,
         color::Bg(color::Reset),
         CRLF,
+        width = w as usize,
     )?;
 
     write!(screen, "{}$ {}{}", CRLF, state.text, CRLF)?;
