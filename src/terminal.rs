@@ -87,7 +87,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                                 })
                                 .position(|width| width as u16 == x - BOP)
                                 .map(|i| v[i].width().unwrap_or(1))
-                                .unwrap_or(1) as u16;
+                                .unwrap_or(0) as u16;
 
                             show_cursor(&mut screen, x + w, PROMPT_LINE)?;
                         }
@@ -143,7 +143,19 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     Key::Ctrl('k') => {
                         let (x, _) = screen.cursor_pos()?;
                         let mut v = state.text.chars().collect::<Vec<char>>();
-                        v.truncate((x - BOP) as usize);
+                        let w = v
+                            .iter()
+                            .enumerate()
+                            .map(|(i, _)| {
+                                v[..i + 1]
+                                    .iter()
+                                    .map(|c| c.width().unwrap_or(1))
+                                    .sum::<usize>()
+                            })
+                            .position(|width| width as u16 == x - BOP)
+                            .map(|i| i + 1)
+                            .unwrap_or(0);
+                        v.truncate(w);
                         state.text = v.iter().collect::<String>();
 
                         show_state(&mut screen, &state, None)?;
