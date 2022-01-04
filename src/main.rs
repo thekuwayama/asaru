@@ -4,7 +4,6 @@ extern crate clap;
 use std::env;
 use std::fs::OpenOptions;
 use std::io::{stdout, Write};
-use std::process;
 
 use clap::{App, Arg};
 
@@ -38,8 +37,7 @@ async fn main() {
     let file = matches.value_of("file");
     match asana::get_workspace(workspace_gid, pats).await {
         Ok(false) | Err(_) => {
-            eprintln!("Error: Failed to access workspace({})", workspace_gid);
-            process::exit(1);
+            panic!("Error: Failed to access workspace({})", workspace_gid);
         }
         _ => {}
     };
@@ -58,12 +56,11 @@ async fn main() {
         Ok(res) => {
             res.iter().for_each(|url| {
                 w.write_all(format!("{}\n", url).as_bytes())
-                    .expect("Error: Failed to print");
+                    .unwrap_or_else(|_| panic!("Error: Failed to print"));
             });
         }
         Err(err) => {
-            eprintln!("Error: {}", err);
-            process::exit(1);
+            panic!("Error: {}", err);
         }
     };
 }
