@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use reqwest::blocking::Client;
+use reqwest::Client;
 use reqwest::StatusCode;
 use serde::Deserialize;
 use serde_json::Value;
@@ -18,8 +18,8 @@ pub struct SearchTasks {
 }
 
 impl SearchTasksData {
-    pub fn get_permalink_url(&self, pats: &str) -> Result<String> {
-        let json = self.do_get_permalink_url(pats)?;
+    pub async fn get_permalink_url(&self, pats: &str) -> Result<String> {
+        let json = self.do_get_permalink_url(pats).await?;
         let root: Value = serde_json::from_str(&json)?;
         root.get("data")
             .and_then(|v| v.get("permalink_url"))
@@ -28,28 +28,28 @@ impl SearchTasksData {
             .ok_or(anyhow!("Failed to extract permalink_url"))
     }
 
-    fn do_get_permalink_url(&self, pats: &str) -> Result<String> {
+    async fn do_get_permalink_url(&self, pats: &str) -> Result<String> {
         // NOTE: https://developers.asana.com/docs/get-a-task
         let url = format!("https://app.asana.com/api/1.0/tasks/{}", self.gid);
         let cli = Client::new();
         // NOTE: https://developers.asana.com/docs/personal-access-token
-        let res = cli.get(url).bearer_auth(pats).send()?;
+        let res = cli.get(url).bearer_auth(pats).send().await?;
         if res.status() != StatusCode::OK {
             return Err(anyhow!("Failed to get task in a workspace app.asana.com"));
         }
 
-        Ok(res.text()?)
+        Ok(res.text().await?)
     }
 }
 
-pub fn search_tasks(workspace_gid: &str, text: &str, pats: &str) -> Result<SearchTasks> {
-    let json = do_search_tasks(workspace_gid, text, pats)?;
+pub async fn search_tasks(workspace_gid: &str, text: &str, pats: &str) -> Result<SearchTasks> {
+    let json = do_search_tasks(workspace_gid, text, pats).await?;
     let tasks: SearchTasks = serde_json::from_str(&json)?;
 
     Ok(tasks)
 }
 
-fn do_search_tasks(workspace_gid: &str, text: &str, pats: &str) -> Result<String> {
+async fn do_search_tasks(workspace_gid: &str, text: &str, pats: &str) -> Result<String> {
     // NOTE: https://developers.asana.com/docs/search-tasks-in-a-workspace
     let url = format!(
         "https://app.asana.com/api/1.0/workspaces/{}/tasks/search?text={}",
@@ -57,21 +57,21 @@ fn do_search_tasks(workspace_gid: &str, text: &str, pats: &str) -> Result<String
     );
     let cli = Client::new();
     // NOTE: https://developers.asana.com/docs/personal-access-token
-    let res = cli.get(url).bearer_auth(pats).send()?;
+    let res = cli.get(url).bearer_auth(pats).send().await?;
     if res.status() != StatusCode::OK {
         return Err(anyhow!(
             "Failed to search tasks in a workspace app.asana.com"
         ));
     }
 
-    Ok(res.text()?)
+    Ok(res.text().await?)
 }
 
-pub fn get_workspace(workspace_gid: &str, pats: &str) -> Result<bool> {
+pub async fn get_workspace(workspace_gid: &str, pats: &str) -> Result<bool> {
     // NOTE: https://developers.asana.com/docs/get-a-workspace
     let url = format!("https://app.asana.com/api/1.0/workspaces/{}", workspace_gid);
     let cli = Client::new();
-    let res = cli.get(url).bearer_auth(pats).send()?;
+    let res = cli.get(url).bearer_auth(pats).send().await?;
 
     if res.status() != StatusCode::OK {
         return Err(anyhow!("Failed to access me"));

@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use anyhow::Result;
+use futures::future;
 
 use crate::asana;
 
@@ -26,16 +27,19 @@ impl State {
         }
     }
 
-    pub fn search(&mut self) -> Result<&mut Self> {
-        self.tasks = asana::search_tasks(&self.workspace_gid, &self.text, &self.pats)?.data;
+    pub async fn search(&mut self) -> Result<&mut Self> {
+        self.tasks = asana::search_tasks(&self.workspace_gid, &self.text, &self.pats)
+            .await?
+            .data;
 
         Ok(self)
     }
 
-    pub fn get_permalink_url(&self) -> Option<String> {
-        self.tasks
-            .get(self.index)
-            .and_then(|t| t.get_permalink_url(&self.pats).ok())
+    pub async fn get_permalink_url(&self) -> Option<String> {
+        match self.tasks.get(self.index) {
+            Some(t) => t.get_permalink_url(&self.pats).await.ok(),
+            None => None,
+        }
     }
 
     pub fn get_titles(&self) -> Vec<String> {
@@ -59,11 +63,18 @@ impl State {
         self.checked.remove(&self.index);
     }
 
-    pub fn get_checked_permalink_urls(&self) -> Vec<String> {
-        self.checked
-            .iter()
-            .filter_map(|i| self.tasks.get(*i))
-            .filter_map(|t| t.get_permalink_url(&self.pats).ok())
+    pub async fn get_checked_permalink_urls(&self) -> Vec<String> {
+        let res = future::join_all({
+            self.checked
+                .iter()
+                .flat_map(|&i| self.tasks.get(i))
+                .map(|t| async move { t.get_permalink_url(&self.pats).await })
+        })
+        .await;
+
+        res.iter()
+            .flat_map(|r| r.as_ref().ok())
+            .map(|s| s.to_string())
             .collect::<Vec<_>>()
     }
 }

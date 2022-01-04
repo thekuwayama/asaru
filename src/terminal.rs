@@ -23,7 +23,7 @@ enum Mode {
     Results,
 }
 
-pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
+pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     let mut stdin = stdin().keys();
     let mut screen = screen::AlternateScreen::from(stdout().into_raw_mode()?);
     write!(screen, "{}{}", clear::All, color::Fg(color::LightWhite))?;
@@ -41,7 +41,7 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                 Mode::Prompt => match c? {
                     Key::Ctrl('c') => break,
                     Key::Char('\n') => {
-                        state.search()?;
+                        state.search().await?;
                         if !state.tasks.is_empty() {
                             state.index = 0;
                             state.checked.clear();
@@ -201,10 +201,11 @@ pub fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         if state.checked.is_empty() {
                             result = state
                                 .get_permalink_url()
+                                .await
                                 .map(|s| vec![s])
                                 .ok_or(anyhow!("Failed to extract permalink_url"));
                         } else {
-                            let urls = state.get_checked_permalink_urls();
+                            let urls = state.get_checked_permalink_urls().await;
                             if state.checked.len() == urls.len() {
                                 result = Ok(urls);
                             } else {

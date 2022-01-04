@@ -12,7 +12,8 @@ mod asana;
 mod controller;
 mod terminal;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = App::new(crate_name!())
         .version(crate_version!())
         .about(crate_description!())
@@ -35,7 +36,7 @@ fn main() {
         .value_of("pats")
         .expect("Error: Failed to specify pats");
     let file = matches.value_of("file");
-    match asana::get_workspace(workspace_gid, pats) {
+    match asana::get_workspace(workspace_gid, pats).await {
         Ok(false) | Err(_) => {
             eprintln!("Error: Failed to access workspace({})", workspace_gid);
             process::exit(1);
@@ -53,7 +54,7 @@ fn main() {
         ),
         _ => Box::new(stdout()),
     };
-    match terminal::run(workspace_gid, pats) {
+    match terminal::run(workspace_gid, pats).await {
         Ok(res) => {
             res.iter().for_each(|url| {
                 w.write_all(format!("{}\n", url).as_bytes())
