@@ -108,7 +108,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             .map(|i| i + 1)
                             .unwrap_or(0);
                         v.insert(w, c);
-                        state.text = v.iter().collect::<String>();
+                        state.text = v.iter().collect();
 
                         show_state(&mut screen, &state, None)?;
                         show_cursor(&mut screen, x + c.width().unwrap_or(1) as u16, PROMPT_LINE)?;
@@ -117,7 +117,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         let (x, _) = screen.cursor_pos()?;
                         if x > BOP && !state.text.is_empty() {
                             let mut v = state.text.chars().collect::<Vec<char>>();
-                            let i = v
+                            let b = v
                                 .iter()
                                 .enumerate()
                                 .map(|(i, _)| {
@@ -127,8 +127,8 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                                         .sum::<usize>()
                                 })
                                 .position(|width| width as u16 == x - BOP);
-                            let w = i.map(|i| v.remove(i).width().unwrap_or(1)).unwrap_or(1) as u16;
-                            state.text = v.iter().collect::<String>();
+                            let w = b.map(|i| v.remove(i).width().unwrap_or(1)).unwrap_or(1) as u16;
+                            state.text = v.iter().collect();
 
                             show_state(&mut screen, &state, None)?;
                             show_cursor(&mut screen, x - w, PROMPT_LINE)?;
@@ -156,7 +156,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             .map(|i| i + 1)
                             .unwrap_or(0);
                         v.truncate(w);
-                        state.text = v.iter().collect::<String>();
+                        state.text = v.iter().collect();
 
                         show_state(&mut screen, &state, None)?;
                         show_cursor(&mut screen, state.text.width() as u16 + BOP, PROMPT_LINE)?;

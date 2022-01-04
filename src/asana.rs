@@ -71,6 +71,7 @@ pub async fn get_workspace(workspace_gid: &str, pats: &str) -> Result<bool> {
     // NOTE: https://developers.asana.com/docs/get-a-workspace
     let url = format!("https://app.asana.com/api/1.0/workspaces/{}", workspace_gid);
     let cli = Client::new();
+    // NOTE: https://developers.asana.com/docs/personal-access-token
     let res = cli.get(url).bearer_auth(pats).send().await?;
 
     if res.status() != StatusCode::OK {

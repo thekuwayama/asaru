@@ -52,15 +52,13 @@ async fn main() {
         ),
         _ => Box::new(stdout()),
     };
-    match terminal::run(workspace_gid, pats).await {
-        Ok(res) => {
+    terminal::run(workspace_gid, pats)
+        .await
+        .map(|res| {
             res.iter().for_each(|url| {
                 w.write_all(format!("{}\n", url).as_bytes())
-                    .unwrap_or_else(|_| panic!("Error: Failed to print"));
-            });
-        }
-        Err(err) => {
-            panic!("Error: {}", err);
-        }
-    };
+                    .expect("Error: Failed to print");
+            })
+        })
+        .unwrap_or_else(|err| panic!("Error: {}", err));
 }
