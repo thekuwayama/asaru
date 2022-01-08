@@ -1,6 +1,6 @@
 [package]
 name = "asaru"
-version = "0.3.1"
+version = "0.3.2"
 description = "Asana Tasks Search CLI"
 repository = "https://github.com/thekuwayama/asaru"
 documentation = "https://docs.rs/asaru"

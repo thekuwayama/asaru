@@ -22,7 +22,7 @@ $ cargo install asaru
 
 ```sh-session
 $ asaru --help
-asaru 0.3.1
+asaru 0.3.2
 Asana Tasks Search CLI
 
 USAGE:
