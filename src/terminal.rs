@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::io::{stdin, stdout, Write};
 
 use anyhow::{anyhow, Result};
@@ -188,6 +189,10 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             mode = Mode::Prompt;
                         }
                     }
+                    Key::PageUp | Key::Ctrl('v') => {
+                        state.index = 0;
+                        show_state(&mut screen, &state, Some(state.index))?;
+                    }
                     Key::Down | Key::Ctrl('n') => {
                         let (_, h) = terminal_size()?;
                         if state.index + 1 < state.tasks.len()
@@ -196,6 +201,11 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             state.index += 1;
                             show_state(&mut screen, &state, Some(state.index))?;
                         }
+                    }
+                    Key::PageDown | Key::Alt('v') => {
+                        let (_, h) = terminal_size()?;
+                        state.index = min(state.tasks.len() - 1, (h - RESULTS_LINE) as usize);
+                        show_state(&mut screen, &state, Some(state.index))?;
                     }
                     Key::Char('\n') => {
                         if state.checked.is_empty() {
