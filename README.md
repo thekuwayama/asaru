@@ -6,7 +6,7 @@
 
 Asaru (`漁る` - look for) is CLI to search Asana Tasks, by which you can do the interactive-search.
 
-<img src="https://github.com/thekuwayama/asaru/blob/main/screenshots/sample.gif" width="50%">
+<img src="/screenshots/sample.gif" width="50%">
 
 
 ## Install
