@@ -17,6 +17,14 @@ You can install `asaru` with the following:
 $ cargo install asaru
 ```
 
+or
+
+```sh-session
+$ brew tap thekuwayama/asaru
+
+$ brew install asaru
+```
+
 
 ## Usage
 
