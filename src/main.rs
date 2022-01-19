@@ -42,15 +42,20 @@ async fn main() {
         _ => {}
     };
 
-    let mut w: Box<dyn Write> = match file {
-        Some(name) => Box::new(
-            OpenOptions::new()
+    let (mut stdout_write, mut file_write);
+    let w: &mut dyn Write = match file {
+        Some(name) => {
+            file_write = OpenOptions::new()
                 .create(true)
                 .write(true)
                 .open(&name)
-                .unwrap_or_else(|_| panic!("Error: Failed to open \"{}\"", name)),
-        ),
-        _ => Box::new(stdout()),
+                .unwrap_or_else(|_| panic!("Error: Failed to open \"{}\"", name));
+            &mut file_write
+        }
+        _ => {
+            stdout_write = stdout();
+            &mut stdout_write
+        }
     };
     terminal::run(workspace_gid, pats)
         .await
