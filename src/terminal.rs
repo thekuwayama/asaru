@@ -18,6 +18,7 @@ const PROMPT_LINE: u16 = 3;
 const RESULTS_LINE: u16 = 5;
 const MENU_BAR: &str = "Asaru | Ctrl-c: Exit | Ctrl-s: Search | TAB: Select | Enter: Execute";
 const CRLF: &str = "\r\n";
+const POINT_CURSOR: &str = ">";
 
 enum Mode {
     Prompt,
@@ -268,14 +269,27 @@ fn show_state<W: Write>(
         Some(index) if i == index && state.is_checked(&i) => {
             write!(
                 screen,
-                "{}> {}{}{}",
+                "{}{}{}{} {}{}{}",
                 CRLF,
+                color::Fg(color::Magenta),
+                POINT_CURSOR,
+                color::Fg(color::LightWhite),
                 color::Bg(color::Magenta),
                 s,
                 color::Bg(color::Reset),
             )
         }
-        Some(index) if i == index => write!(screen, "{}> {}", CRLF, s),
+        Some(index) if i == index => {
+            write!(
+                screen,
+                "{}{}{}{} {}",
+                CRLF,
+                color::Fg(color::Magenta),
+                POINT_CURSOR,
+                color::Fg(color::LightWhite),
+                s
+            )
+        }
         Some(_) if state.is_checked(&i) => {
             write!(
                 screen,
