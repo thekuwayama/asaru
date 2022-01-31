@@ -62,8 +62,8 @@ impl State {
         self
     }
 
-    pub fn edit_index(mut self, index: &usize) -> Self {
-        self.index = *index;
+    pub fn edit_index(mut self, index: usize) -> Self {
+        self.index = index;
         self
     }
 

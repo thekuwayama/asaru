@@ -205,8 +205,9 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     }
                     Key::PageDown | Key::Alt('v') => {
                         let (_, h) = terminal_size()?;
-                        let l = state.tasks().len() - 1;
-                        state = state.edit_index(&min(l, (h - RESULTS_LINE) as usize));
+                        let lh = state.tasks().len() - 1;
+                        let rh = (h - RESULTS_LINE) as usize;
+                        state = state.edit_index(min(lh, rh));
                         show_state(&mut screen, &state, Some(state.index()))?;
                     }
                     Key::Char('\n') => {
