@@ -8,14 +8,29 @@ use crate::asana;
 pub struct State {
     workspace_gid: String,
     pats: String,
-
-    pub text: String,
-    pub tasks: Vec<asana::SearchTasksData>,
-    pub index: usize,
-    pub checked: HashSet<usize>,
+    text: String,
+    tasks: Vec<asana::SearchTasksData>,
+    index: usize,
+    checked: HashSet<usize>,
 }
 
 impl State {
+    pub fn text(&self) -> &str {
+        &self.text
+    }
+
+    pub fn tasks(&self) -> &[asana::SearchTasksData] {
+        &self.tasks
+    }
+
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    pub fn checked(&self) -> &HashSet<usize> {
+        &self.checked
+    }
+
     pub fn new(workspace_gid: &str, pats: &str) -> Self {
         State {
             text: String::new(),
@@ -27,11 +42,41 @@ impl State {
         }
     }
 
-    pub async fn search(&mut self) -> Result<&mut Self> {
-        self.tasks = asana::search_tasks(&self.workspace_gid, &self.text, &self.pats)
+    pub fn clear_checked(mut self) -> Self {
+        self.checked = HashSet::new();
+        self
+    }
+
+    pub fn clear_index(mut self) -> Self {
+        self.index = 0;
+        self
+    }
+
+    pub fn dec_index(mut self) -> Self {
+        self.index -= 1;
+        self
+    }
+
+    pub fn inc_index(mut self) -> Self {
+        self.index += 1;
+        self
+    }
+
+    pub fn edit_index(mut self, index: &usize) -> Self {
+        self.index = *index;
+        self
+    }
+
+    pub fn edit_text(mut self, text: &str) -> Self {
+        self.text = text.to_string();
+        self
+    }
+
+    pub async fn search(mut self) -> Result<Self> {
+        let tasks = asana::search_tasks(&self.workspace_gid, &self.text, &self.pats)
             .await?
             .data;
-
+        self.tasks = tasks;
         Ok(self)
     }
 
@@ -53,14 +98,22 @@ impl State {
         self.checked.contains(index)
     }
 
-    pub fn check(&mut self) {
+    pub fn check(mut self) -> Self {
         if self.tasks.len() > self.index {
-            self.checked.insert(self.index);
+            let mut hs = self.checked;
+            hs.insert(self.index);
+            self.checked = hs;
+            return self;
         }
+
+        self
     }
 
-    pub fn uncheck(&mut self) {
-        self.checked.remove(&self.index);
+    pub fn uncheck(mut self) -> Self {
+        let mut hs = self.checked;
+        hs.remove(&self.index);
+        self.checked = hs;
+        self
     }
 
     pub async fn get_checked_permalink_urls(&self) -> Vec<String> {

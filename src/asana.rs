@@ -4,7 +4,7 @@ use reqwest::StatusCode;
 use serde::Deserialize;
 use serde_json::Value;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct SearchTasksData {
     gid: String,
     pub name: String,

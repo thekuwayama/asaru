@@ -43,24 +43,23 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                 Mode::Prompt => match c? {
                     Key::Ctrl('c') => break,
                     Key::Char('\n') => {
-                        state.search().await?;
-                        if !state.tasks.is_empty() {
-                            state.index = 0;
-                            state.checked.clear();
-                            show_state(&mut screen, &state, Some(state.index))?;
+                        state = state.search().await?;
+                        if !state.tasks().is_empty() {
+                            state = state.clear_checked().clear_index();
+                            show_state(&mut screen, &state, Some(state.index()))?;
                             hide_cursor(&mut screen)?;
                             mode = Mode::Results;
                         } else {
                             let (x, _) = screen.cursor_pos()?;
-                            state.checked.clear();
-                            show_state(&mut screen, &state, Some(state.index))?;
+                            state = state.clear_checked();
+                            show_state(&mut screen, &state, Some(state.index()))?;
                             show_cursor(&mut screen, x, PROMPT_LINE)?;
                         }
                     }
                     Key::Left | Key::Ctrl('b') => {
                         let (x, _) = screen.cursor_pos()?;
                         if x > BOP {
-                            let v = state.text.chars().collect::<Vec<char>>();
+                            let v = state.text().chars().collect::<Vec<char>>();
                             let w = v
                                 .iter()
                                 .enumerate()
@@ -79,8 +78,8 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     }
                     Key::Right | Key::Ctrl('f') => {
                         let (x, _) = screen.cursor_pos()?;
-                        if x < state.text.width() as u16 + BOP {
-                            let v = state.text.chars().collect::<Vec<char>>();
+                        if x < state.text().width() as u16 + BOP {
+                            let v = state.text().chars().collect::<Vec<char>>();
                             let w = v
                                 .iter()
                                 .enumerate()
@@ -96,7 +95,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     }
                     Key::Char(c) => {
                         let (x, _) = screen.cursor_pos()?;
-                        let mut v = state.text.chars().collect::<Vec<char>>();
+                        let mut v = state.text().chars().collect::<Vec<char>>();
                         let w = v
                             .iter()
                             .enumerate()
@@ -110,15 +109,14 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             .map(|i| i + 1)
                             .unwrap_or(0);
                         v.insert(w, c);
-                        state.text = v.iter().collect();
-
+                        state = state.edit_text(&v.iter().collect::<String>());
                         show_state(&mut screen, &state, None)?;
                         show_cursor(&mut screen, x + c.width().unwrap_or(1) as u16, PROMPT_LINE)?;
                     }
                     Key::Backspace | Key::Ctrl('h') => {
                         let (x, _) = screen.cursor_pos()?;
-                        if x > BOP && !state.text.is_empty() {
-                            let mut v = state.text.chars().collect::<Vec<char>>();
+                        if x > BOP && !state.text().is_empty() {
+                            let mut v = state.text().chars().collect::<Vec<char>>();
                             let b = v
                                 .iter()
                                 .enumerate()
@@ -130,8 +128,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                                 })
                                 .position(|width| width as u16 == x - BOP);
                             let w = b.map(|i| v.remove(i).width().unwrap_or(1)).unwrap_or(1) as u16;
-                            state.text = v.iter().collect();
-
+                            state = state.edit_text(&v.iter().collect::<String>());
                             show_state(&mut screen, &state, None)?;
                             show_cursor(&mut screen, x - w, PROMPT_LINE)?;
                         }
@@ -140,11 +137,11 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         show_cursor(&mut screen, BOP, PROMPT_LINE)?;
                     }
                     Key::Ctrl('e') => {
-                        show_cursor(&mut screen, state.text.width() as u16 + BOP, PROMPT_LINE)?;
+                        show_cursor(&mut screen, state.text().width() as u16 + BOP, PROMPT_LINE)?;
                     }
                     Key::Ctrl('k') => {
                         let (x, _) = screen.cursor_pos()?;
-                        let mut v = state.text.chars().collect::<Vec<char>>();
+                        let mut v = state.text().chars().collect::<Vec<char>>();
                         let w = v
                             .iter()
                             .enumerate()
@@ -158,15 +155,14 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             .map(|i| i + 1)
                             .unwrap_or(0);
                         v.truncate(w);
-                        state.text = v.iter().collect();
-
+                        state = state.edit_text(&v.iter().collect::<String>());
                         show_state(&mut screen, &state, None)?;
-                        show_cursor(&mut screen, state.text.width() as u16 + BOP, PROMPT_LINE)?;
+                        show_cursor(&mut screen, state.text().width() as u16 + BOP, PROMPT_LINE)?;
                     }
                     Key::Down | Key::Ctrl('n') => {
-                        if !state.tasks.is_empty() {
-                            state.index = 0;
-                            show_state(&mut screen, &state, Some(state.index))?;
+                        if !state.tasks().is_empty() {
+                            state = state.clear_index();
+                            show_state(&mut screen, &state, Some(state.index()))?;
                             hide_cursor(&mut screen)?;
                             mode = Mode::Results;
                         }
@@ -177,39 +173,44 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     Key::Ctrl('c') => break,
                     Key::Ctrl('s') => {
                         show_state(&mut screen, &state, None)?;
-                        show_cursor(&mut screen, state.text.width() as u16 + BOP, PROMPT_LINE)?;
+                        show_cursor(&mut screen, state.text().width() as u16 + BOP, PROMPT_LINE)?;
                         mode = Mode::Prompt;
                     }
                     Key::Up | Key::Ctrl('p') => {
-                        if state.index > 0 {
-                            state.index -= 1;
-                            show_state(&mut screen, &state, Some(state.index))?;
+                        if state.index() > 0 {
+                            state = state.dec_index();
+                            show_state(&mut screen, &state, Some(state.index()))?;
                         } else {
                             show_state(&mut screen, &state, None)?;
-                            show_cursor(&mut screen, state.text.width() as u16 + BOP, PROMPT_LINE)?;
+                            show_cursor(
+                                &mut screen,
+                                state.text().width() as u16 + BOP,
+                                PROMPT_LINE,
+                            )?;
                             mode = Mode::Prompt;
                         }
                     }
                     Key::PageUp | Key::Ctrl('v') => {
-                        state.index = 0;
-                        show_state(&mut screen, &state, Some(state.index))?;
+                        state = state.inc_index();
+                        show_state(&mut screen, &state, Some(state.index()))?;
                     }
                     Key::Down | Key::Ctrl('n') => {
                         let (_, h) = terminal_size()?;
-                        if state.index + 1 < state.tasks.len()
-                            && state.index as u16 + RESULTS_LINE < h
+                        if state.index() + 1 < state.tasks().len()
+                            && state.index() as u16 + RESULTS_LINE < h
                         {
-                            state.index += 1;
-                            show_state(&mut screen, &state, Some(state.index))?;
+                            state = state.inc_index();
+                            show_state(&mut screen, &state, Some(state.index()))?;
                         }
                     }
                     Key::PageDown | Key::Alt('v') => {
                         let (_, h) = terminal_size()?;
-                        state.index = min(state.tasks.len() - 1, (h - RESULTS_LINE) as usize);
-                        show_state(&mut screen, &state, Some(state.index))?;
+                        let l = state.tasks().len() - 1;
+                        state = state.edit_index(&min(l, (h - RESULTS_LINE) as usize));
+                        show_state(&mut screen, &state, Some(state.index()))?;
                     }
                     Key::Char('\n') => {
-                        if state.checked.is_empty() {
+                        if state.checked().is_empty() {
                             result = state
                                 .get_permalink_url()
                                 .await
@@ -217,7 +218,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                                 .ok_or(anyhow!("Failed to extract permalink_url"));
                         } else {
                             let urls = state.get_checked_permalink_urls().await;
-                            if state.checked.len() == urls.len() {
+                            if state.checked().len() == urls.len() {
                                 result = Ok(urls);
                             } else {
                                 result = Err(anyhow!("Failed to extract permalink_url"));
@@ -226,12 +227,12 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         break;
                     }
                     Key::Char('\t') => {
-                        if state.is_checked(&state.index) {
-                            state.uncheck();
+                        if state.is_checked(&state.index()) {
+                            state = state.uncheck();
                         } else {
-                            state.check();
+                            state = state.check();
                         }
-                        show_state(&mut screen, &state, Some(state.index))?;
+                        show_state(&mut screen, &state, Some(state.index()))?;
                     }
                     _ => continue,
                 },
@@ -262,7 +263,7 @@ fn show_state<W: Write>(
         width = w as usize,
     )?;
 
-    write!(screen, "{}$ {}{}", CRLF, state.text, CRLF)?;
+    write!(screen, "{}$ {}{}", CRLF, state.text(), CRLF)?;
     let mut titles = state.get_titles();
     titles.truncate((h - PROMPT_LINE - 1) as usize);
     titles.iter().enumerate().try_for_each(|(i, s)| match opt {
