@@ -23,6 +23,7 @@ const RESULTS_LINE: u16 = 5;
 const MENU_BAR: &str = "Asaru | Ctrl-c: Exit | Ctrl-s: Search | TAB: Select | Enter: Execute";
 const CRLF: &str = "\r\n";
 const POINT_CURSOR: &str = ">";
+const OPTICAL_RESOLUTIO: u64 = 20;
 
 enum Mode {
     Prompt,
@@ -44,7 +45,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
         let input = stdin.next();
         tx.send(input).unwrap();
 
-        thread::sleep(time::Duration::from_millis(20));
+        thread::sleep(time::Duration::from_millis(OPTICAL_RESOLUTIO));
     });
     loop {
         if let Some(c) = rx.recv()? {
@@ -52,7 +53,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                 Mode::Prompt => match c? {
                     Key::Ctrl('c') => break,
                     Key::Char('\n') => {
-                        let sp = Spinner::new(&Spinners::Dots9, state.text().to_string());
+                        let sp = wait_state(&state)?;
                         state = state.search().await?;
                         sp.stop();
                         if !state.tasks().is_empty() {
@@ -269,18 +270,18 @@ fn show_state<W: Write>(
 
     write!(
         screen,
-        "{}{:<width$}{}{}",
+        "{}{:<width$}{}{}{}",
         color::Bg(color::LightMagenta),
         MENU_BAR,
         color::Bg(color::Reset),
+        CRLF,
         CRLF,
         width = w as usize,
     )?;
 
     write!(
         screen,
-        "{}$ {}{}{}",
-        CRLF,
+        "$ {}{}{}",
         state.text(),
         CRLF,
         get_titles(state, opt)?,
@@ -288,6 +289,11 @@ fn show_state<W: Write>(
     screen.flush()?;
 
     Ok(())
+}
+
+fn wait_state(state: &controller::State) -> Result<Spinner> {
+    cursor::Goto(BOL, PROMPT_LINE);
+    Ok(Spinner::new(&Spinners::Dots9, state.text().to_string()))
 }
 
 fn get_titles(state: &controller::State, opt: Option<usize>) -> Result<String> {
