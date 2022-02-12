@@ -1,7 +1,11 @@
 use std::cmp::min;
 use std::io::{stdin, stdout, Write};
+use std::sync::mpsc;
+use std::thread;
+use std::time;
 
 use anyhow::{anyhow, Result};
+use spinners::{Spinner, Spinners};
 use termion::cursor::{self, DetectCursorPos};
 use termion::event::Key;
 use termion::input::TermRead;
@@ -19,6 +23,7 @@ const RESULTS_LINE: u16 = 5;
 const MENU_BAR: &str = "Asaru | Ctrl-c: Exit | Ctrl-s: Search | TAB: Select | Enter: Execute";
 const CRLF: &str = "\r\n";
 const POINT_CURSOR: &str = ">";
+const OPTICAL_RESOLUTIO: u64 = 20;
 
 enum Mode {
     Prompt,
@@ -35,22 +40,31 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     show_cursor(&mut screen, BOP, PROMPT_LINE)?;
     let mut mode = Mode::Prompt;
     let mut result = Ok(Vec::new());
-    loop {
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || loop {
         let input = stdin.next();
+        tx.send(input).unwrap();
 
-        if let Some(c) = input {
+        thread::sleep(time::Duration::from_millis(OPTICAL_RESOLUTIO));
+    });
+    loop {
+        if let Some(c) = rx.recv()? {
             match mode {
                 Mode::Prompt => match c? {
                     Key::Ctrl('c') => break,
                     Key::Char('\n') => {
+                        let sp = wait_state(&state)?;
                         state = state.search().await?;
+                        sp.stop();
                         if !state.tasks().is_empty() {
                             state = state.clear_checked().clear_index();
                             show_state(&mut screen, &state, Some(state.index()))?;
                             hide_cursor(&mut screen)?;
                             mode = Mode::Results;
                         } else {
-                            let (x, _) = screen.cursor_pos()?;
+                            let (x, _) = screen
+                                .cursor_pos()
+                                .unwrap_or((state.text().width() as u16 + BOP, 0u16));
                             state = state.clear_checked();
                             show_state(&mut screen, &state, Some(state.index()))?;
                             show_cursor(&mut screen, x, PROMPT_LINE)?;
@@ -251,72 +265,88 @@ fn show_state<W: Write>(
     state: &controller::State,
     opt: Option<usize>,
 ) -> Result<()> {
-    let (w, h) = terminal_size()?;
+    let (w, _) = terminal_size()?;
     write!(screen, "{}{}", clear::All, cursor::Goto(BOL, FIRST_LINE))?;
 
     write!(
         screen,
-        "{}{:<width$}{}{}",
+        "{}{:<width$}{}{}{}",
         color::Bg(color::LightMagenta),
         MENU_BAR,
         color::Bg(color::Reset),
         CRLF,
+        CRLF,
         width = w as usize,
     )?;
 
-    write!(screen, "{}$ {}{}", CRLF, state.text(), CRLF)?;
-    let mut titles = state.get_titles();
-    titles.truncate((h - PROMPT_LINE - 1) as usize);
-    titles.iter().enumerate().try_for_each(|(i, s)| match opt {
-        Some(index) if i == index && state.is_checked(&i) => {
-            write!(
-                screen,
-                "{}{}{}{} {}{}{}",
-                CRLF,
-                color::Fg(color::Magenta),
-                POINT_CURSOR,
-                color::Fg(color::LightWhite),
-                color::Bg(color::Magenta),
-                s,
-                color::Bg(color::Reset),
-            )
-        }
-        Some(index) if i == index => {
-            write!(
-                screen,
-                "{}{}{}{} {}",
-                CRLF,
-                color::Fg(color::Magenta),
-                POINT_CURSOR,
-                color::Fg(color::LightWhite),
-                s
-            )
-        }
-        Some(_) if state.is_checked(&i) => {
-            write!(
-                screen,
-                "{}  {}{}{}",
-                CRLF,
-                color::Bg(color::Magenta),
-                s,
-                color::Bg(color::Reset),
-            )
-        }
-        None if state.is_checked(&i) => {
-            write!(
-                screen,
-                "{}  {}{}{}",
-                CRLF,
-                color::Bg(color::Magenta),
-                s,
-                color::Bg(color::Reset),
-            )
-        }
-        _ => write!(screen, "{}  {}", CRLF, s),
-    })?;
+    write!(
+        screen,
+        "$ {}{}{}",
+        state.text(),
+        CRLF,
+        get_titles(state, opt)?,
+    )?;
     screen.flush()?;
 
     Ok(())
+}
+
+fn wait_state(state: &controller::State) -> Result<Spinner> {
+    cursor::Goto(BOL, PROMPT_LINE);
+    Ok(Spinner::new(&Spinners::Dots9, state.text().to_string()))
+}
+
+fn get_titles(state: &controller::State, opt: Option<usize>) -> Result<String> {
+    let (_, h) = terminal_size()?;
+    let mut titles = state.get_titles();
+    titles.truncate((h - PROMPT_LINE - 1) as usize);
+    Ok(titles
+        .iter()
+        .enumerate()
+        .map(|(i, s)| match opt {
+            Some(index) if i == index && state.is_checked(&i) => {
+                format!(
+                    "{}{}{}{} {}{}{}",
+                    CRLF,
+                    color::Fg(color::Magenta),
+                    POINT_CURSOR,
+                    color::Fg(color::LightWhite),
+                    color::Bg(color::Magenta),
+                    s,
+                    color::Bg(color::Reset),
+                )
+            }
+            Some(index) if i == index => {
+                format!(
+                    "{}{}{}{} {}",
+                    CRLF,
+                    color::Fg(color::Magenta),
+                    POINT_CURSOR,
+                    color::Fg(color::LightWhite),
+                    s
+                )
+            }
+            Some(_) if state.is_checked(&i) => {
+                format!(
+                    "{}  {}{}{}",
+                    CRLF,
+                    color::Bg(color::Magenta),
+                    s,
+                    color::Bg(color::Reset),
+                )
+            }
+            None if state.is_checked(&i) => {
+                format!(
+                    "{}  {}{}{}",
+                    CRLF,
+                    color::Bg(color::Magenta),
+                    s,
+                    color::Bg(color::Reset),
+                )
+            }
+            _ => format!("{}  {}", CRLF, s),
+        })
+        .collect())
 }
 
 fn show_cursor<W: Write>(screen: &mut W, x: u16, y: u16) -> Result<()> {
