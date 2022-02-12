@@ -191,7 +191,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         }
                     }
                     Key::PageUp | Key::Ctrl('v') => {
-                        state = state.inc_index();
+                        state = state.clear_index();
                         show_state(&mut screen, &state, Some(state.index()))?;
                     }
                     Key::Down | Key::Ctrl('n') => {
