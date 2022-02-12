@@ -297,54 +297,57 @@ fn wait_state(state: &controller::State) -> Result<Spinner> {
 }
 
 fn get_titles(state: &controller::State, opt: Option<usize>) -> Result<String> {
-    let (_, h) = terminal_size()?;
+    let (w, h) = terminal_size()?;
     let mut titles = state.get_titles();
     titles.truncate((h - PROMPT_LINE - 1) as usize);
     Ok(titles
-        .iter()
+        .iter_mut()
         .enumerate()
-        .map(|(i, s)| match opt {
-            Some(index) if i == index && state.is_checked(&i) => {
-                format!(
-                    "{}{}{}{} {}{}{}",
-                    CRLF,
-                    color::Fg(color::Magenta),
-                    POINT_CURSOR,
-                    color::Fg(color::LightWhite),
-                    color::Bg(color::Magenta),
-                    s,
-                    color::Bg(color::Reset),
-                )
+        .map(|(i, s)| {
+            unicode_trancate(s, w as usize - 2);
+            match opt {
+                Some(index) if i == index && state.is_checked(&i) => {
+                    format!(
+                        "{}{}{}{} {}{}{}",
+                        CRLF,
+                        color::Fg(color::Magenta),
+                        POINT_CURSOR,
+                        color::Fg(color::LightWhite),
+                        color::Bg(color::Magenta),
+                        s,
+                        color::Bg(color::Reset),
+                    )
+                }
+                Some(index) if i == index => {
+                    format!(
+                        "{}{}{}{} {}",
+                        CRLF,
+                        color::Fg(color::Magenta),
+                        POINT_CURSOR,
+                        color::Fg(color::LightWhite),
+                        s
+                    )
+                }
+                Some(_) if state.is_checked(&i) => {
+                    format!(
+                        "{}  {}{}{}",
+                        CRLF,
+                        color::Bg(color::Magenta),
+                        s,
+                        color::Bg(color::Reset),
+                    )
+                }
+                None if state.is_checked(&i) => {
+                    format!(
+                        "{}  {}{}{}",
+                        CRLF,
+                        color::Bg(color::Magenta),
+                        s,
+                        color::Bg(color::Reset),
+                    )
+                }
+                _ => format!("{}  {}", CRLF, s),
             }
-            Some(index) if i == index => {
-                format!(
-                    "{}{}{}{} {}",
-                    CRLF,
-                    color::Fg(color::Magenta),
-                    POINT_CURSOR,
-                    color::Fg(color::LightWhite),
-                    s
-                )
-            }
-            Some(_) if state.is_checked(&i) => {
-                format!(
-                    "{}  {}{}{}",
-                    CRLF,
-                    color::Bg(color::Magenta),
-                    s,
-                    color::Bg(color::Reset),
-                )
-            }
-            None if state.is_checked(&i) => {
-                format!(
-                    "{}  {}{}{}",
-                    CRLF,
-                    color::Bg(color::Magenta),
-                    s,
-                    color::Bg(color::Reset),
-                )
-            }
-            _ => format!("{}  {}", CRLF, s),
         })
         .collect())
 }
@@ -361,4 +364,10 @@ fn hide_cursor<W: Write>(screen: &mut W) -> Result<()> {
     screen.flush()?;
 
     Ok(())
+}
+
+fn unicode_trancate(s: &mut String, max_size: usize) {
+    while s.width() > max_size {
+        s.pop();
+    }
 }
