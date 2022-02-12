@@ -1,7 +1,11 @@
 use std::cmp::min;
 use std::io::{stdin, stdout, Write};
+use std::sync::mpsc;
+use std::thread;
+use std::time;
 
 use anyhow::{anyhow, Result};
+use spinners::{Spinner, Spinners};
 use termion::cursor::{self, DetectCursorPos};
 use termion::event::Key;
 use termion::input::TermRead;
@@ -35,22 +39,31 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     show_cursor(&mut screen, BOP, PROMPT_LINE)?;
     let mut mode = Mode::Prompt;
     let mut result = Ok(Vec::new());
-    loop {
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || loop {
         let input = stdin.next();
+        tx.send(input).unwrap();
 
-        if let Some(c) = input {
+        thread::sleep(time::Duration::from_millis(20));
+    });
+    loop {
+        if let Some(c) = rx.recv()? {
             match mode {
                 Mode::Prompt => match c? {
                     Key::Ctrl('c') => break,
                     Key::Char('\n') => {
+                        let sp = Spinner::new(&Spinners::Dots9, state.text().to_string());
                         state = state.search().await?;
+                        sp.stop();
                         if !state.tasks().is_empty() {
                             state = state.clear_checked().clear_index();
                             show_state(&mut screen, &state, Some(state.index()))?;
                             hide_cursor(&mut screen)?;
                             mode = Mode::Results;
                         } else {
-                            let (x, _) = screen.cursor_pos()?;
+                            let (x, _) = screen
+                                .cursor_pos()
+                                .unwrap_or((state.text().width() as u16 + BOP, 0u16));
                             state = state.clear_checked();
                             show_state(&mut screen, &state, Some(state.index()))?;
                             show_cursor(&mut screen, x, PROMPT_LINE)?;
