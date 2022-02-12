@@ -42,8 +42,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     let mut result = Ok(Vec::new());
     let (tx, rx) = mpsc::channel();
     thread::spawn(move || loop {
-        let input = stdin.next();
-        tx.send(input).unwrap();
+        tx.send(stdin.next()).unwrap();
 
         thread::sleep(time::Duration::from_millis(OPTICAL_RESOLUTIO));
     });
@@ -53,8 +52,10 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                 Mode::Prompt => match c? {
                     Key::Ctrl('c') => break,
                     Key::Char('\n') => {
-                        let sp = wait_state(&state)?;
+                        let sp = wait_state(&mut screen, &state)?;
                         state = state.search().await?;
+                        // clear keys that are buffering by Receiver during the search
+                        while rx.try_recv().is_ok() {}
                         sp.stop();
                         if !state.tasks().is_empty() {
                             state = state.clear_checked().clear_index();
@@ -62,12 +63,13 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             hide_cursor(&mut screen)?;
                             mode = Mode::Results;
                         } else {
-                            let (x, _) = screen
-                                .cursor_pos()
-                                .unwrap_or((state.text().width() as u16 + BOP, 0u16));
                             state = state.clear_checked();
                             show_state(&mut screen, &state, Some(state.index()))?;
-                            show_cursor(&mut screen, x, PROMPT_LINE)?;
+                            show_cursor(
+                                &mut screen,
+                                state.text().width() as u16 + BOP,
+                                PROMPT_LINE,
+                            )?;
                         }
                     }
                     Key::Left | Key::Ctrl('b') => {
@@ -291,8 +293,8 @@ fn show_state<W: Write>(
     Ok(())
 }
 
-fn wait_state(state: &controller::State) -> Result<Spinner> {
-    cursor::Goto(BOL, PROMPT_LINE);
+fn wait_state<W: Write>(screen: &mut W, state: &controller::State) -> Result<Spinner> {
+    write!(screen, "{}", cursor::Goto(BOL, PROMPT_LINE))?;
     Ok(Spinner::new(&Spinners::Dots9, state.text().to_string()))
 }
 
