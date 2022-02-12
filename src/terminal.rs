@@ -53,7 +53,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                 Mode::Prompt => match c? {
                     Key::Ctrl('c') => break,
                     Key::Char('\n') => {
-                        let sp = wait_state(&state)?;
+                        let sp = wait_state(&mut screen, &state)?;
                         state = state.search().await?;
                         sp.stop();
                         if !state.tasks().is_empty() {
@@ -294,8 +294,8 @@ fn show_state<W: Write>(
     Ok(())
 }
 
-fn wait_state(state: &controller::State) -> Result<Spinner> {
-    cursor::Goto(BOL, PROMPT_LINE);
+fn wait_state<W: Write>(screen: &mut W, state: &controller::State) -> Result<Spinner> {
+    write!(screen, "{}", cursor::Goto(BOL, PROMPT_LINE))?;
     Ok(Spinner::new(&Spinners::Dots9, state.text().to_string()))
 }
 
