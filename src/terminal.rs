@@ -69,6 +69,9 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             show_state(&mut screen, &state, Some(state.index()))?;
                             show_cursor(&mut screen, x, PROMPT_LINE)?;
                         }
+
+                        // clear keys that are buffering by Receiver during the search
+                        while rx.try_recv().is_ok() {}
                     }
                     Key::Left | Key::Ctrl('b') => {
                         let (x, _) = screen.cursor_pos()?;
