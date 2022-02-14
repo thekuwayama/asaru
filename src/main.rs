@@ -1,11 +1,8 @@
-#[macro_use]
-extern crate clap;
-
 use std::env;
 use std::fs::OpenOptions;
 use std::io::{stdout, Write};
 
-use clap::{App, Arg};
+use clap::{crate_description, crate_name, crate_version, App, Arg};
 
 mod asana;
 mod controller;
@@ -17,16 +14,16 @@ async fn main() {
         .version(crate_version!())
         .about(crate_description!())
         .arg(
-            Arg::with_name("workspace_gid")
+            Arg::new("workspace_gid")
                 .help("Globally unique identifier for the workspace or organization")
                 .required(true),
         )
         .arg(
-            Arg::with_name("pats")
+            Arg::new("pats")
                 .help("Personal Access Tokens (PATs)")
                 .required(true),
         )
-        .arg(Arg::with_name("file").help("Output file").required(false));
+        .arg(Arg::new("file").help("Output file").required(false));
     let matches = cli.get_matches();
     let workspace_gid = matches
         .value_of("workspace_gid")

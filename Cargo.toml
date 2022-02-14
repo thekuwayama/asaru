@@ -13,7 +13,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-clap = "2.33"
+clap = { version = "3.0", features = ["cargo", "derive"] }
 futures = "0.3"
 reqwest = "0.11"
 serde = { version = "1.0", features = ["derive"] }

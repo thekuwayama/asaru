@@ -36,14 +36,14 @@ Asana Tasks Search CLI
 USAGE:
     asaru <workspace_gid> <pats> [file]
 
-FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
-
 ARGS:
     <workspace_gid>    Globally unique identifier for the workspace or organization
     <pats>             Personal Access Tokens (PATs)
     <file>             Output file
+
+OPTIONS:
+    -h, --help       Print help information
+    -V, --version    Print version information
 ```
 
 
