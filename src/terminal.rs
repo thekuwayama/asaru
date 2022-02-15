@@ -40,12 +40,15 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     show_cursor(&mut screen, BOP, PROMPT_LINE)?;
     let mut mode = Mode::Prompt;
     let mut result = Ok(Vec::new());
-    let (tx, rx) = mpsc::channel();
-    thread::spawn(move || loop {
-        tx.send(stdin.next()).unwrap();
 
-        thread::sleep(time::Duration::from_millis(OPTICAL_RESOLUTIO));
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || -> Result<()> {
+        loop {
+            tx.send(stdin.next())?;
+            thread::sleep(time::Duration::from_millis(OPTICAL_RESOLUTIO));
+        }
     });
+
     loop {
         if let Some(c) = rx.recv()? {
             match mode {
