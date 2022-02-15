@@ -1,30 +1,14 @@
-use std::env;
 use std::fs::OpenOptions;
 use std::io::{stdout, Write};
 
-use clap::{crate_description, crate_name, crate_version, App, Arg};
-
 mod asana;
+mod cli;
 mod controller;
 mod terminal;
 
 #[tokio::main]
 async fn main() {
-    let cli = App::new(crate_name!())
-        .version(crate_version!())
-        .about(crate_description!())
-        .arg(
-            Arg::new("workspace_gid")
-                .help("Globally unique identifier for the workspace or organization")
-                .required(true),
-        )
-        .arg(
-            Arg::new("pats")
-                .help("Personal Access Tokens (PATs)")
-                .required(true),
-        )
-        .arg(Arg::new("file").help("Output file").required(false));
-    let matches = cli.get_matches();
+    let matches = cli::build().get_matches();
     let workspace_gid = matches
         .value_of("workspace_gid")
         .expect("Error: Failed to specify workspace_gid");
