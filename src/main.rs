@@ -1,5 +1,6 @@
 use std::fs::OpenOptions;
 use std::io::{stdout, Write};
+use std::process;
 
 mod asana;
 mod cli;
@@ -18,7 +19,8 @@ async fn main() {
     let file = matches.value_of(cli::FILE);
     match asana::get_workspace(workspace_gid, pats).await {
         Ok(false) | Err(_) => {
-            panic!("Error: Failed to access workspace({})", workspace_gid);
+            eprintln!("Error: Failed to access workspace({})", workspace_gid);
+            process::exit(1);
         }
         _ => {}
     };
@@ -30,7 +32,10 @@ async fn main() {
                 .create(true)
                 .write(true)
                 .open(&name)
-                .unwrap_or_else(|_| panic!("Error: Failed to open \"{}\"", name));
+                .unwrap_or_else(|_| {
+                    eprintln!("Error: Failed to open \"{}\"", name);
+                    process::exit(1);
+                });
             &mut file_write
         }
         _ => {
@@ -46,5 +51,8 @@ async fn main() {
                     .expect("Error: Failed to print");
             })
         })
-        .unwrap_or_else(|err| panic!("Error: {}", err));
+        .unwrap_or_else(|err| {
+            eprintln!("Error: {}", err);
+            process::exit(1);
+        });
 }
