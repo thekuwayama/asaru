@@ -10,12 +10,12 @@ mod terminal;
 async fn main() {
     let matches = cli::build().get_matches();
     let workspace_gid = matches
-        .value_of("workspace_gid")
+        .value_of(cli::WORKSPACE_GID)
         .expect("Error: Failed to specify workspace_gid");
     let pats = matches
-        .value_of("pats")
+        .value_of(cli::PATS)
         .expect("Error: Failed to specify pats");
-    let file = matches.value_of("file");
+    let file = matches.value_of(cli::FILE);
     match asana::get_workspace(workspace_gid, pats).await {
         Ok(false) | Err(_) => {
             panic!("Error: Failed to access workspace({})", workspace_gid);
