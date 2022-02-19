@@ -1,11 +1,11 @@
-use clap::{crate_description, crate_name, crate_version, App, Arg};
+use clap::{crate_description, crate_name, crate_version, Arg, Command};
 
 pub const WORKSPACE_GID: &str = "workspace_gid";
 pub const PATS: &str = "pats";
 pub const FILE: &str = "file";
 
-pub fn build() -> App<'static> {
-    App::new(crate_name!())
+pub fn build() -> Command<'static> {
+    Command::new(crate_name!())
         .version(crate_version!())
         .about(crate_description!())
         .arg(
