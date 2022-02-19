@@ -30,7 +30,7 @@ $ brew install asaru
 
 ```sh-session
 $ asaru --help
-asaru 0.3.2
+asaru 0.3.3
 Asana Tasks Search CLI
 
 USAGE:
