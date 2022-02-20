@@ -41,10 +41,23 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     let mut mode = Mode::Prompt;
     let mut result = Ok(Vec::new());
 
-    let (tx, rx) = mpsc::channel();
+    let (tx1, rx) = mpsc::channel();
+    let tx2 = tx1.clone();
     thread::spawn(move || -> Result<()> {
         loop {
-            tx.send(stdin.next())?;
+            tx1.send(stdin.next())?;
+            thread::sleep(time::Duration::from_millis(OPTICAL_RESOLUTIO));
+        }
+    });
+    thread::spawn(move || -> Result<()> {
+        let (mut w, mut h) = terminal_size()?;
+        loop {
+            let (new_w, new_h) = terminal_size()?;
+            if new_w != w || new_h != h {
+                w = new_w;
+                h = new_h;
+                tx2.send(Some(Ok(Key::Ctrl('g'))))?;
+            }
             thread::sleep(time::Duration::from_millis(OPTICAL_RESOLUTIO));
         }
     });
@@ -67,7 +80,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             mode = Mode::Results;
                         } else {
                             state = state.clear_checked();
-                            show_state(&mut screen, &state, Some(state.index()))?;
+                            show_state(&mut screen, &state, None)?;
                             show_cursor(
                                 &mut screen,
                                 state.text().width() as u16 + BOP,
@@ -186,6 +199,10 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             mode = Mode::Results;
                         }
                     }
+                    Key::Ctrl('g') => {
+                        show_state(&mut screen, &state, None)?;
+                        show_cursor(&mut screen, state.text().width() as u16 + BOP, PROMPT_LINE)?;
+                    }
                     _ => continue,
                 },
                 Mode::Results => match c? {
@@ -254,6 +271,9 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         }
                         show_state(&mut screen, &state, Some(state.index()))?;
                     }
+                    Key::Ctrl('g') => {
+                        show_state(&mut screen, &state, Some(state.index()))?;
+                    }
                     _ => continue,
                 },
             }
@@ -275,9 +295,13 @@ fn show_state<W: Write>(
 
     write!(
         screen,
-        "{}{:<width$}{}{}{}",
+        "{}{:width$}{}{}{}",
         color::Bg(color::LightMagenta),
-        MENU_BAR,
+        if MENU_BAR.len() > w as usize {
+            &MENU_BAR[..w as usize]
+        } else {
+            MENU_BAR
+        },
         color::Bg(color::Reset),
         CRLF,
         CRLF,
