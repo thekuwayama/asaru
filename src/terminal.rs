@@ -67,7 +67,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             mode = Mode::Results;
                         } else {
                             state = state.clear_checked();
-                            show_state(&mut screen, &state, Some(state.index()))?;
+                            show_state(&mut screen, &state, None)?;
                             show_cursor(
                                 &mut screen,
                                 state.text().width() as u16 + BOP,
@@ -186,6 +186,10 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                             mode = Mode::Results;
                         }
                     }
+                    Key::Ctrl('g') => {
+                        show_state(&mut screen, &state, None)?;
+                        show_cursor(&mut screen, state.text().width() as u16 + BOP, PROMPT_LINE)?;
+                    }
                     _ => continue,
                 },
                 Mode::Results => match c? {
@@ -254,6 +258,9 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         }
                         show_state(&mut screen, &state, Some(state.index()))?;
                     }
+                    Key::Ctrl('g') => {
+                        show_state(&mut screen, &state, Some(state.index()))?;
+                    }
                     _ => continue,
                 },
             }
@@ -273,11 +280,16 @@ fn show_state<W: Write>(
     let (w, _) = terminal_size()?;
     write!(screen, "{}{}", clear::All, cursor::Goto(BOL, FIRST_LINE))?;
 
+    let menu_bar = if MENU_BAR.len() > w as usize {
+        &MENU_BAR[..w as usize]
+    } else {
+        MENU_BAR
+    };
     write!(
         screen,
-        "{}{:<width$}{}{}{}",
+        "{}{:width$}{}{}{}",
         color::Bg(color::LightMagenta),
-        MENU_BAR,
+        menu_bar,
         color::Bg(color::Reset),
         CRLF,
         CRLF,
