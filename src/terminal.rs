@@ -41,23 +41,10 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     let mut mode = Mode::Prompt;
     let mut result = Ok(Vec::new());
 
-    let (tx1, rx) = mpsc::channel();
-    let tx2 = tx1.clone();
+    let (tx, rx) = mpsc::channel();
     thread::spawn(move || -> Result<()> {
         loop {
             tx1.send(stdin.next())?;
-            thread::sleep(time::Duration::from_millis(OPTICAL_RESOLUTIO));
-        }
-    });
-    thread::spawn(move || -> Result<()> {
-        let (mut w, mut h) = terminal_size()?;
-        loop {
-            let (new_w, new_h) = terminal_size()?;
-            if new_w != w || new_h != h {
-                w = new_w;
-                h = new_h;
-                tx2.send(Some(Ok(Key::Ctrl('g'))))?;
-            }
             thread::sleep(time::Duration::from_millis(OPTICAL_RESOLUTIO));
         }
     });
