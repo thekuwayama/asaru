@@ -280,15 +280,16 @@ fn show_state<W: Write>(
     let (w, _) = terminal_size()?;
     write!(screen, "{}{}", clear::All, cursor::Goto(BOL, FIRST_LINE))?;
 
+    let menu_bar = if MENU_BAR.len() > w as usize {
+        &MENU_BAR[..w as usize]
+    } else {
+        MENU_BAR
+    };
     write!(
         screen,
         "{}{:width$}{}{}{}",
         color::Bg(color::LightMagenta),
-        if MENU_BAR.len() > w as usize {
-            &MENU_BAR[..w as usize]
-        } else {
-            MENU_BAR
-        },
+        menu_bar,
         color::Bg(color::Reset),
         CRLF,
         CRLF,
