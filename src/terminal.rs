@@ -44,7 +44,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     let (tx, rx) = mpsc::channel();
     thread::spawn(move || -> Result<()> {
         loop {
-            tx1.send(stdin.next())?;
+            tx.send(stdin.next())?;
             thread::sleep(time::Duration::from_millis(OPTICAL_RESOLUTIO));
         }
     });
