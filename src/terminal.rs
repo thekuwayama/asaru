@@ -39,7 +39,6 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     show_state(&mut screen, &state, None)?;
     show_cursor(&mut screen, BOP, PROMPT_LINE)?;
     let mut mode = Mode::Prompt;
-    let mut result = Ok(Vec::new());
 
     let (tx, rx) = mpsc::channel();
     thread::spawn(move || -> Result<()> {
@@ -49,11 +48,11 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
         }
     });
 
-    loop {
+    let result = loop {
         if let Some(c) = rx.recv()? {
             match mode {
                 Mode::Prompt => match c? {
-                    Key::Ctrl('c') => break,
+                    Key::Ctrl('c') => break Ok(Vec::new()),
                     Key::Char('\n') => {
                         let sp = wait_state(&mut screen, &state)?;
                         state = state.search().await?;
@@ -193,7 +192,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     _ => continue,
                 },
                 Mode::Results => match c? {
-                    Key::Ctrl('c') => break,
+                    Key::Ctrl('c') => break Ok(Vec::new()),
                     Key::Ctrl('s') => {
                         show_state(&mut screen, &state, None)?;
                         show_cursor(&mut screen, state.text().width() as u16 + BOP, PROMPT_LINE)?;
@@ -235,7 +234,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                     }
                     Key::Char('\n') => {
                         if state.checked().is_empty() {
-                            result = state
+                            break state
                                 .get_permalink_url()
                                 .await
                                 .map(|s| vec![s])
@@ -243,12 +242,11 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                         } else {
                             let urls = state.get_checked_permalink_urls().await;
                             if state.checked().len() == urls.len() {
-                                result = Ok(urls);
+                                break Ok(urls);
                             } else {
-                                result = Err(anyhow!("Failed to extract permalink_url"));
+                                break Err(anyhow!("Failed to extract permalink_url"));
                             }
                         }
-                        break;
                     }
                     Key::Char('\t') => {
                         if state.is_checked(&state.index()) {
@@ -265,7 +263,7 @@ pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
                 },
             }
         }
-    }
+    };
     write!(screen, "{}", cursor::Show)?;
     screen.flush()?;
 
