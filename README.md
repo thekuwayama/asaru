@@ -65,6 +65,7 @@ OPTIONS:
 | Ctrl-a             | Move the cursor to the beginning of the text line.                                                          |
 | Ctrl-e             | Move the cursor to the end of the text line.                                                                |
 | Ctrl-k             | Delete all the text from the current cursor position to the end of the line if the cursor is at the prompt. |
+| Ctrl-g             | Redisplay the terminal.                                                                                     |
 
 
 ## Settings
