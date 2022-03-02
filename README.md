@@ -99,5 +99,5 @@ $ source $HOME/.bashrc
 
 Licensed under either of
 
-- Apache License, Version 2.0 (LICENSE-APACHE or http://apache.org/licenses/LICENSE-2.0)
-- MIT license (LICENSE-MIT or http://opensource.org/licenses/MIT)
+- Apache License, Version 2.0 ([LICENSE-APACHE](https://github.com/thekuwayama/asaru/blob/main/LICENSE-APACHE) or http://apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](https://github.com/thekuwayama/asaru/blob/main/LICENSE-MIT) or http://opensource.org/licenses/MIT)
