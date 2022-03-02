@@ -5,7 +5,7 @@ use futures::future;
 
 use crate::asana;
 
-pub struct State {
+pub(crate) struct State {
     workspace_gid: String,
     pats: String,
     text: String,

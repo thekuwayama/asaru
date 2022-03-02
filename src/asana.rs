@@ -5,7 +5,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct SearchTasksData {
+pub(crate) struct SearchTasksData {
     gid: String,
     pub name: String,
     #[allow(dead_code)]
@@ -13,7 +13,7 @@ pub struct SearchTasksData {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct SearchTasks {
+pub(crate) struct SearchTasks {
     pub data: Vec<SearchTasksData>,
 }
 
@@ -42,7 +42,11 @@ impl SearchTasksData {
     }
 }
 
-pub async fn search_tasks(workspace_gid: &str, text: &str, pats: &str) -> Result<SearchTasks> {
+pub(crate) async fn search_tasks(
+    workspace_gid: &str,
+    text: &str,
+    pats: &str,
+) -> Result<SearchTasks> {
     let json = do_search_tasks(workspace_gid, text, pats).await?;
     let tasks: SearchTasks = serde_json::from_str(&json)?;
 
@@ -67,7 +71,7 @@ async fn do_search_tasks(workspace_gid: &str, text: &str, pats: &str) -> Result<
     Ok(res.text().await?)
 }
 
-pub async fn get_workspace(workspace_gid: &str, pats: &str) -> Result<bool> {
+pub(crate) async fn get_workspace(workspace_gid: &str, pats: &str) -> Result<bool> {
     // NOTE: https://developers.asana.com/docs/get-a-workspace
     let url = format!("https://app.asana.com/api/1.0/workspaces/{}", workspace_gid);
     let cli = Client::new();

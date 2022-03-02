@@ -30,7 +30,7 @@ enum Mode {
     Results,
 }
 
-pub async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
+pub(crate) async fn run(workspace_gid: &str, pats: &str) -> Result<Vec<String>> {
     let mut stdin = stdin().keys();
     let mut screen = screen::AlternateScreen::from(stdout().into_raw_mode()?);
     write!(screen, "{}{}", clear::All, color::Fg(color::LightWhite))?;

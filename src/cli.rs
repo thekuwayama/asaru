@@ -4,7 +4,7 @@ pub const WORKSPACE_GID: &str = "workspace_gid";
 pub const PATS: &str = "pats";
 pub const FILE: &str = "file";
 
-pub fn build() -> Command<'static> {
+pub(crate) fn build() -> Command<'static> {
     Command::new(crate_name!())
         .version(crate_version!())
         .about(crate_description!())
